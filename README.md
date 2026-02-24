@@ -14,3 +14,4 @@ Each record follows the format: **Title → Status → Context → Decision → 
 - [ADR-006: No database in MVP](./adr/006-no-database-mvp.md)
 - [ADR-007: Deployment and CI/CD](./adr/007-deployment-cicd.md)
 - [ADR-008: MCP server for marketplace data access](./adr/008-mcp-server.md)
+- [ADR-009: Monorepo with npm workspaces](./adr/009-monorepo-workspaces.md)
