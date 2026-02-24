@@ -37,3 +37,12 @@ logs/
 
 # Git worktrees
 .worktrees/
+
+# Next.js
+.next/
+out/
+
+# Output
+output/*.json
+output/*.txt
+!output/.gitkeep
