@@ -15,5 +15,9 @@
     "format:check": "prettier --check 'packages/*/src/**/*.{ts,tsx}'",
     "type-check": "tsc --build",
     "scan": "tsx packages/agent/scripts/scan.ts"
+  },
+  "devDependencies": {
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.0.18"
   }
 }
