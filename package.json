@@ -1,0 +1,19 @@
+{
+  "name": "synthfinder-agent",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=packages/agent",
+    "build": "npm run build --workspace=packages/agent",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint packages/",
+    "lint:fix": "eslint packages/ --fix",
+    "format": "prettier --write 'packages/*/src/**/*.{ts,tsx}'",
+    "format:check": "prettier --check 'packages/*/src/**/*.{ts,tsx}'",
+    "type-check": "tsc --build",
+    "scan": "tsx packages/agent/scripts/scan.ts"
+  }
+}
