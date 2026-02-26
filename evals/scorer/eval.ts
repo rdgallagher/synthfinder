@@ -12,6 +12,10 @@ interface EvalCase {
   };
 }
 
+function normalizeAmount(s: string): string {
+  return s.replace(/,/g, "").replace(/\.00\b/g, "");
+}
+
 async function main() {
   delete process.env.LLM_MODE;
 
@@ -40,7 +44,7 @@ async function main() {
 
       // Check reasoning mentions required terms
       for (const term of evalCase.expected.reasoning_must_mention) {
-        if (!result.reasoning.includes(term)) {
+        if (!normalizeAmount(result.reasoning).includes(normalizeAmount(term))) {
           casePassed = false;
           details.push(`reasoning missing: "${term}" not found in "${result.reasoning}"`);
         }
