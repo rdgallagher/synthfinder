@@ -1,0 +1,85 @@
+[
+  {
+    "input": {
+      "normalized": {
+        "canonicalModel": "Roland Juno-106",
+        "conditionTier": "good",
+        "price": 80000,
+        "extras": ["hard case"],
+        "redFlags": [],
+        "originalListing": {
+          "id": "eval-s-001",
+          "title": "Roland Juno-106",
+          "description": "Good condition with case",
+          "price": 80000,
+          "condition": "good",
+          "url": "https://reverb.com/item/001",
+          "marketplace": "reverb"
+        }
+      },
+      "soldListings": [
+        { "id": "s1", "title": "Juno-106", "description": "Good", "price": 110000, "condition": "good", "url": "https://reverb.com/s1", "marketplace": "reverb", "soldDate": "2025-12-01", "soldPrice": 110000 },
+        { "id": "s2", "title": "Juno-106", "description": "Good", "price": 125000, "condition": "good", "url": "https://reverb.com/s2", "marketplace": "reverb", "soldDate": "2025-11-15", "soldPrice": 120000 }
+      ]
+    },
+    "expected": {
+      "dealTier": "strong-bargain",
+      "reasoning_must_mention": ["$800", "$1,100"]
+    }
+  },
+  {
+    "input": {
+      "normalized": {
+        "canonicalModel": "Roland Juno-106",
+        "conditionTier": "mint",
+        "price": 185000,
+        "extras": ["original box", "manual"],
+        "redFlags": [],
+        "originalListing": {
+          "id": "eval-s-002",
+          "title": "Juno-106 Mint",
+          "description": "Pristine",
+          "price": 185000,
+          "condition": "mint",
+          "url": "https://reverb.com/item/002",
+          "marketplace": "reverb"
+        }
+      },
+      "soldListings": [
+        { "id": "s3", "title": "Juno-106 Mint", "description": "Mint", "price": 175000, "condition": "mint", "url": "https://reverb.com/s3", "marketplace": "reverb", "soldDate": "2025-10-05", "soldPrice": 170000 }
+      ]
+    },
+    "expected": {
+      "dealTier": "overpriced",
+      "reasoning_must_mention": ["$1,850", "$1,700"]
+    }
+  },
+  {
+    "input": {
+      "normalized": {
+        "canonicalModel": "Roland Juno-106",
+        "conditionTier": "good",
+        "price": 115000,
+        "extras": [],
+        "redFlags": [],
+        "originalListing": {
+          "id": "eval-s-003",
+          "title": "Juno-106",
+          "description": "Good condition",
+          "price": 115000,
+          "condition": "good",
+          "url": "https://reverb.com/item/003",
+          "marketplace": "reverb"
+        }
+      },
+      "soldListings": [
+        { "id": "s1", "title": "Juno-106", "description": "Good", "price": 110000, "condition": "good", "url": "https://reverb.com/s1", "marketplace": "reverb", "soldDate": "2025-12-01", "soldPrice": 110000 },
+        { "id": "s2", "title": "Juno-106", "description": "Good", "price": 125000, "condition": "good", "url": "https://reverb.com/s2", "marketplace": "reverb", "soldDate": "2025-11-15", "soldPrice": 120000 }
+      ]
+    },
+    "expected": {
+      "dealTier": "fair-deal",
+      "reasoning_must_mention": ["$1,150"]
+    }
+  }
+]
