@@ -7,7 +7,7 @@ import type { ScanReport } from "@synthfinder/shared";
 
 const execFileAsync = promisify(execFile);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const scanScript = path.resolve(__dirname, "../../../../scripts/scan.ts");
+const scanScript = path.resolve(__dirname, "../../../scripts/scan.ts");
 
 describe("scan e2e", () => {
   it("outputs a JSON deal report for watchlist items", async () => {
