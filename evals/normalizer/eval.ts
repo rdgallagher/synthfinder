@@ -13,7 +13,7 @@ interface EvalCase {
 
 // Fuzzy match: check if expected items are present in actual (case-insensitive, substring)
 function fuzzyArrayMatch(actual: string[], expected: string[]): number {
-  if (expected.length === 0) return actual.length === 0 ? 1 : 0.5;
+  if (expected.length === 0) return actual.length === 0 ? 1 : 0;
   let matches = 0;
   for (const exp of expected) {
     const found = actual.some(
@@ -68,6 +68,8 @@ async function main() {
       }
 
       // Check extras (fuzzy)
+      // Array fields pass if ≥50% of expected items are fuzzy-matched.
+      // This tolerates rephrasing while still requiring approximate coverage.
       caseTotal++;
       const extrasScore = fuzzyArrayMatch(result.extras, evalCase.expected.extras);
       if (extrasScore >= 0.5) {
@@ -79,6 +81,8 @@ async function main() {
       }
 
       // Check red flags (fuzzy)
+      // Array fields pass if ≥50% of expected items are fuzzy-matched.
+      // This tolerates rephrasing while still requiring approximate coverage.
       caseTotal++;
       const flagsScore = fuzzyArrayMatch(result.redFlags, evalCase.expected.redFlags);
       if (flagsScore >= 0.5) {
