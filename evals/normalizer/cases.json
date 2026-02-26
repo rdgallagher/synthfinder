@@ -1,0 +1,87 @@
+[
+  {
+    "input": {
+      "id": "eval-n-001",
+      "title": "Roland JUNO 106 great cond w/ case",
+      "description": "All voices working after recent chip replacement. Includes original hard case. No power cable.",
+      "price": 120000,
+      "condition": "great condition",
+      "url": "https://reverb.com/item/001",
+      "marketplace": "reverb"
+    },
+    "expected": {
+      "canonicalModel": "Roland Juno-106",
+      "conditionTier": "good",
+      "extras": ["hard case", "voice chip replacement"],
+      "redFlags": ["no power cable"]
+    }
+  },
+  {
+    "input": {
+      "id": "eval-n-002",
+      "title": "Roland Juno-106 - Mint, Original Box",
+      "description": "Pristine condition. All original. Comes with original box and manual. One owner since 1985.",
+      "price": 185000,
+      "condition": "mint",
+      "url": "https://reverb.com/item/002",
+      "marketplace": "reverb"
+    },
+    "expected": {
+      "canonicalModel": "Roland Juno-106",
+      "conditionTier": "mint",
+      "extras": ["original box", "manual"],
+      "redFlags": []
+    }
+  },
+  {
+    "input": {
+      "id": "eval-n-003",
+      "title": "Juno 106 AS-IS for parts/repair",
+      "description": "Dead voice chips (4 of 6 not working). Cosmetically rough. Selling as-is, no returns. Missing side panel.",
+      "price": 45000,
+      "condition": "as-is",
+      "url": "https://reverb.com/item/003",
+      "marketplace": "reverb"
+    },
+    "expected": {
+      "canonicalModel": "Roland Juno-106",
+      "conditionTier": "for-parts",
+      "extras": [],
+      "redFlags": ["dead voice chips", "as-is", "missing side panel"]
+    }
+  },
+  {
+    "input": {
+      "id": "eval-n-004",
+      "title": "Roland Juno-106 Analog Synth - Fair Condition",
+      "description": "Works but has sticky keys and some voice chip issues. 2 voices intermittent. Cosmetic wear on panel. Power cable included.",
+      "price": 75000,
+      "condition": "fair",
+      "url": "https://reverb.com/item/004",
+      "marketplace": "reverb"
+    },
+    "expected": {
+      "canonicalModel": "Roland Juno-106",
+      "conditionTier": "fair",
+      "extras": ["power cable"],
+      "redFlags": ["sticky keys", "voice chip issues"]
+    }
+  },
+  {
+    "input": {
+      "id": "eval-n-005",
+      "title": "Juno-106 Excellent - Serviced 2024",
+      "description": "Fully serviced in 2024. All new voice chips installed. New battery. Sounds incredible. Includes sustain pedal.",
+      "price": 155000,
+      "condition": "excellent",
+      "url": "https://reverb.com/item/005",
+      "marketplace": "reverb"
+    },
+    "expected": {
+      "canonicalModel": "Roland Juno-106",
+      "conditionTier": "excellent",
+      "extras": ["new voice chips", "new battery", "sustain pedal", "serviced 2024"],
+      "redFlags": []
+    }
+  }
+]
