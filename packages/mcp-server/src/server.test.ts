@@ -34,8 +34,9 @@ describe("MCP server", () => {
       name: "search_listings",
       arguments: { query: "Roland Juno-106" },
     });
-    expect(result.content).toHaveLength(1);
-    const content = result.content[0] as { type: string; text: string };
+    const resultContent = (result as { content: Array<{ type: string; text: string }> }).content;
+    expect(resultContent).toHaveLength(1);
+    const content = resultContent[0] as { type: string; text: string };
     expect(content.type).toBe("text");
     const listings = JSON.parse(content.text) as unknown[];
     expect(Array.isArray(listings)).toBe(true);
@@ -51,8 +52,9 @@ describe("MCP server", () => {
       name: "get_sold_listings",
       arguments: { query: "Roland Juno-106", since: "2025-01-01" },
     });
-    expect(result.content).toHaveLength(1);
-    const content = result.content[0] as { type: string; text: string };
+    const resultContent = (result as { content: Array<{ type: string; text: string }> }).content;
+    expect(resultContent).toHaveLength(1);
+    const content = resultContent[0] as { type: string; text: string };
     expect(content.type).toBe("text");
     const soldListings = JSON.parse(content.text) as unknown[];
     expect(Array.isArray(soldListings)).toBe(true);
@@ -68,8 +70,9 @@ describe("MCP server", () => {
       name: "get_supported_marketplaces",
       arguments: {},
     });
-    expect(result.content).toHaveLength(1);
-    const content = result.content[0] as { type: string; text: string };
+    const resultContent = (result as { content: Array<{ type: string; text: string }> }).content;
+    expect(resultContent).toHaveLength(1);
+    const content = resultContent[0] as { type: string; text: string };
     expect(content.type).toBe("text");
     const marketplaces = JSON.parse(content.text) as string[];
     expect(Array.isArray(marketplaces)).toBe(true);

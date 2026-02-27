@@ -1,10 +1,4 @@
-export type ConditionTier =
-  | "mint"
-  | "excellent"
-  | "good"
-  | "fair"
-  | "poor"
-  | "for-parts";
+export type ConditionTier = "mint" | "excellent" | "good" | "fair" | "poor" | "for-parts";
 
 export type DealTier = "strong-bargain" | "fair-deal" | "overpriced";
 

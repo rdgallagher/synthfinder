@@ -5,5 +5,6 @@ export default defineProject({
   plugins: [tsconfigPaths()],
   test: {
     environment: "node",
+    include: ["src/**/*.test.ts"],
   },
 });

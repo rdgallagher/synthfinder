@@ -18,6 +18,8 @@ export function createMcpServer(defaultMarketplace: string = "fixture"): McpServ
     version: "0.0.1",
   });
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error TS2589: MCP SDK's zod schema inference is too deep for tsc; runtime is correct.
   server.tool(
     "search_listings",
     "Search active listings across marketplaces",
@@ -51,16 +53,11 @@ export function createMcpServer(defaultMarketplace: string = "fixture"): McpServ
     },
   );
 
-  server.tool(
-    "get_supported_marketplaces",
-    "List available marketplaces",
-    {},
-    async () => {
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify([defaultMarketplace]) }],
-      };
-    },
-  );
+  server.tool("get_supported_marketplaces", "List available marketplaces", {}, async () => {
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify([defaultMarketplace]) }],
+    };
+  });
 
   return server;
 }

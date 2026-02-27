@@ -1,10 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type {
-  NormalizedListing,
-  SoldListing,
-  ScoredListing,
-  DealTier,
-} from "@synthfinder/shared";
+import type { NormalizedListing, SoldListing, ScoredListing, DealTier } from "@synthfinder/shared";
 
 const anthropic = new Anthropic();
 
@@ -34,10 +29,7 @@ const SCORE_TOOL = {
   },
 };
 
-function stubScore(
-  normalized: NormalizedListing,
-  soldListings: SoldListing[],
-): ScoredListing {
+function stubScore(normalized: NormalizedListing, soldListings: SoldListing[]): ScoredListing {
   const avgSoldPrice =
     soldListings.length > 0
       ? soldListings.reduce((sum, s) => sum + s.soldPrice, 0) / soldListings.length
