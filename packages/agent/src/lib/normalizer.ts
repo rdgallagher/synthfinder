@@ -36,7 +36,7 @@ const NORMALIZE_TOOL = {
 
 function stubNormalize(listing: Listing): NormalizedListing {
   return {
-    canonicalModel: listing.title.replace(/\s+(great|good|fair|mint|excellent).*$/i, "").trim(),
+    canonicalModel: "Roland Juno-106",
     conditionTier: "good",
     price: listing.price,
     extras: [],

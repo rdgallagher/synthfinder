@@ -33,6 +33,6 @@ describe("scan e2e", () => {
     const scored = report.scoredListings[0];
     expect(["strong-bargain", "fair-deal", "overpriced"]).toContain(scored.dealTier);
     expect(scored.reasoning).toBeTruthy();
-    expect(scored.normalizedListing.canonicalModel).toBeTruthy();
+    expect(scored.normalizedListing.canonicalModel).toContain("Juno");
   }, 30000);
 });

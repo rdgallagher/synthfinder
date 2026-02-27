@@ -61,5 +61,6 @@ export class SynthfinderMcpClient {
 
   async close(): Promise<void> {
     await this.client.close();
+    await this.transport?.close();
   }
 }
