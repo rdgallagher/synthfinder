@@ -18,7 +18,6 @@ export function createMcpServer(defaultMarketplace: string = "fixture"): McpServ
     version: "0.0.1",
   });
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-expect-error TS2589: MCP SDK's zod schema inference is too deep for tsc; runtime is correct.
   server.tool(
     "search_listings",
