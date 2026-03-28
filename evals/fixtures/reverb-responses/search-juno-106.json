@@ -1,0 +1,45 @@
+{
+  "listings": [
+    {
+      "id": 1111111,
+      "title": "Roland Juno-106 Analog Synth - Excellent Condition",
+      "description": "Fully working, all 6 voices good. Recently serviced. Includes power cable.",
+      "price": {
+        "amount": "1100.00",
+        "amount_cents": 110000,
+        "currency": "USD"
+      },
+      "condition": {
+        "display_name": "Excellent"
+      },
+      "_links": {
+        "web": { "href": "https://reverb.com/item/1111111" }
+      },
+      "photos": [
+        { "_links": { "full": { "href": "https://images.reverb.com/image/upload/1111111.jpg" } } }
+      ],
+      "published_at": "2026-03-01T10:00:00Z"
+    },
+    {
+      "id": 2222222,
+      "title": "Juno 106 w/ original case - needs chip work",
+      "description": "2 of 6 voices cutting out. Includes hard case and manual. Sold as-is.",
+      "price": {
+        "amount": "550.00",
+        "amount_cents": 55000,
+        "currency": "USD"
+      },
+      "condition": {
+        "display_name": "Fair"
+      },
+      "_links": {
+        "web": { "href": "https://reverb.com/item/2222222" }
+      },
+      "photos": [],
+      "published_at": "2026-03-10T14:30:00Z"
+    }
+  ],
+  "total": 2,
+  "current_page": 1,
+  "per_page": 50
+}

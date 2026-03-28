@@ -1,0 +1,45 @@
+{
+  "listings": [
+    {
+      "id": 3333333,
+      "title": "Roland Juno-106 Good Condition",
+      "description": "All voices working, cosmetic wear.",
+      "price": {
+        "amount": "1050.00",
+        "amount_cents": 105000,
+        "currency": "USD"
+      },
+      "condition": {
+        "display_name": "Good"
+      },
+      "_links": {
+        "web": { "href": "https://reverb.com/item/3333333" }
+      },
+      "photos": [],
+      "published_at": "2026-01-15T09:00:00Z"
+    },
+    {
+      "id": 4444444,
+      "title": "Roland Juno-106 Mint - Original Box",
+      "description": "One owner, pristine.",
+      "price": {
+        "amount": "1700.00",
+        "amount_cents": 170000,
+        "currency": "USD"
+      },
+      "condition": {
+        "display_name": "Mint"
+      },
+      "_links": {
+        "web": { "href": "https://reverb.com/item/4444444" }
+      },
+      "photos": [
+        { "_links": { "full": { "href": "https://images.reverb.com/image/upload/4444444.jpg" } } }
+      ],
+      "published_at": "2025-12-20T16:00:00Z"
+    }
+  ],
+  "total": 2,
+  "current_page": 1,
+  "per_page": 50
+}
