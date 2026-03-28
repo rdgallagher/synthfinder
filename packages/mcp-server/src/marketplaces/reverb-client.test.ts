@@ -27,9 +27,12 @@ describe("ReverbMarketplaceClient", () => {
 
       expect(fetch).toHaveBeenCalledOnce();
       const [url, init] = fetch.mock.calls[0] as [string, RequestInit];
+      const headers = init.headers as Record<string, string>;
       expect(url).toContain("reverb.com");
       expect(url).toContain("Roland+Juno-106");
-      expect((init.headers as Record<string, string>)["Authorization"]).toBe("Bearer test-key");
+      expect(headers["Authorization"]).toBe("Bearer test-key");
+      expect(headers["Accept"]).toBe("application/hal+json");
+      expect(headers["Accept-Version"]).toBe("3.0");
     });
 
     it("maps Reverb listings to Listing domain type", async () => {

@@ -85,7 +85,8 @@ export class ReverbMarketplaceClient implements MarketplaceClient {
     const response = await this.fetch(url, {
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
-        Accept: "application/hal+json; api_version=3.0",
+        Accept: "application/hal+json",
+        "Accept-Version": "3.0",
       },
     });
     if (!response.ok) {
