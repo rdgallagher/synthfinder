@@ -72,6 +72,7 @@ export class ReverbMarketplaceClient implements MarketplaceClient {
     const url = `${REVERB_API_BASE}/listings?${new URLSearchParams({ query, state: "sold", per_page: "50" })}`;
     const data = await this.get<ReverbSearchResponse>(url);
     return data.listings
+      // TODO(smoke-test): verify published_at is the correct field for sold date — may need ended_at or updated_at
       .filter((raw) => new Date(raw.published_at) >= since)
       .map((raw) => ({
         ...mapListing(raw),

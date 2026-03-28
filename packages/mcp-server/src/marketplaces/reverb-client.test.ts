@@ -97,4 +97,15 @@ describe("ReverbMarketplaceClient", () => {
       expect(listings).toHaveLength(0);
     });
   });
+
+  it("throws on non-ok HTTP response", async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      new Response("Unauthorized", { status: 401, statusText: "Unauthorized" }),
+    );
+    const client = new ReverbMarketplaceClient("bad-key", fetch);
+
+    await expect(client.searchListings("Roland Juno-106")).rejects.toThrow(
+      "Reverb API error: 401 Unauthorized",
+    );
+  });
 });
