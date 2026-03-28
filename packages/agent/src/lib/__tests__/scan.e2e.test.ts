@@ -3,7 +3,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { readFileSync } from "node:fs";
+import { readFileSync, unlinkSync } from "node:fs";
 import type { ScanReport } from "@synthfinder/shared";
 
 const execFileAsync = promisify(execFile);
@@ -26,20 +26,41 @@ describe("scan e2e", () => {
     expect(outputMatch).toBeTruthy();
     const outputPath = outputMatch![1];
 
-    const content = readFileSync(outputPath, "utf-8");
-    const reports: ScanReport[] = JSON.parse(content);
+    try {
+      const content = readFileSync(outputPath, "utf-8");
+      const reports: ScanReport[] = JSON.parse(content);
 
-    expect(Array.isArray(reports)).toBe(true);
-    expect(reports.length).toBeGreaterThan(0);
+      expect(Array.isArray(reports)).toBe(true);
+      expect(reports.length).toBeGreaterThan(0);
 
-    const report = reports[0];
-    expect(report.watchlistItem.model).toBe("Roland Juno-106");
-    expect(report.scoredListings.length).toBeGreaterThan(0);
-    expect(report.scannedAt).toBeDefined();
+      const report = reports[0];
+      expect(report.watchlistItem.model).toBe("Roland Juno-106");
+      expect(report.scoredListings.length).toBeGreaterThan(0);
+      expect(report.scannedAt).toBeDefined();
 
-    const scored = report.scoredListings[0];
-    expect(["strong-bargain", "fair-deal", "overpriced"]).toContain(scored.dealTier);
-    expect(scored.reasoning).toBeTruthy();
-    expect(scored.normalizedListing.canonicalModel).toContain("Juno");
+      const scored = report.scoredListings[0];
+      expect(["strong-bargain", "fair-deal", "overpriced"]).toContain(scored.dealTier);
+      expect(scored.reasoning).toBeTruthy();
+      expect(scored.normalizedListing.canonicalModel).toContain("Juno");
+    } finally {
+      // Clean up output files created by the CLI
+      const logMatch = stdout.match(/Log:\s+(.+)/);
+      if (logMatch) {
+        try {
+          unlinkSync(logMatch[1].trim());
+        } catch {
+          // File already gone or doesn't exist
+        }
+      }
+
+      const outputFileMatch = stdout.match(/Output:\s+(.+)/);
+      if (outputFileMatch) {
+        try {
+          unlinkSync(outputFileMatch[1].trim());
+        } catch {
+          // File already gone or doesn't exist
+        }
+      }
+    }
   }, 30000);
 });
