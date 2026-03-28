@@ -2,11 +2,17 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { MarketplaceClient } from "@synthfinder/shared";
 import { FixtureMarketplaceClient } from "./marketplaces/fixture-client.js";
+import { ReverbMarketplaceClient } from "./marketplaces/reverb-client.js";
 
 function getMarketplaceClient(marketplace: string): MarketplaceClient {
   switch (marketplace) {
     case "fixture":
       return new FixtureMarketplaceClient();
+    case "reverb": {
+      const apiKey = process.env.REVERB_API_KEY;
+      if (!apiKey) throw new Error("REVERB_API_KEY environment variable is required");
+      return new ReverbMarketplaceClient(apiKey);
+    }
     default:
       throw new Error(`Unknown marketplace: ${marketplace}`);
   }
