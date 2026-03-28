@@ -16,6 +16,9 @@ MARKETPLACE=fixture LLM_MODE=stub npm run scan
 
 # Run the scanner for real (requires ANTHROPIC_API_KEY)
 MARKETPLACE=fixture npm run scan
+
+# Run the scanner against live Reverb data (requires both API keys)
+MARKETPLACE=reverb npm run scan
 ```
 
 ### Prerequisites
@@ -72,6 +75,7 @@ All commands run from the repo root:
 | `MARKETPLACE` | `fixture` | `fixture` | Which marketplace client to use. `fixture` returns hardcoded Juno-106 data. |
 | `LLM_MODE` | `stub` or unset | real LLM | `stub` returns deterministic responses without making API calls. Used in tests. |
 | `ANTHROPIC_API_KEY` | your key | — | Required for real LLM calls (normalizer, scorer, evals). |
+| `REVERB_API_KEY` | your key | — | Required for `MARKETPLACE=reverb`. Reverb Personal Access Token. |
 
 ---
 
