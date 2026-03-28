@@ -3,6 +3,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readFileSync } from "node:fs";
 import type { ScanReport } from "@synthfinder/shared";
 
 const execFileAsync = promisify(execFile);
@@ -20,7 +21,13 @@ describe("scan e2e", () => {
       timeout: 30000,
     });
 
-    const reports: ScanReport[] = JSON.parse(stdout);
+    // Extract the output path from the logged output
+    const outputMatch = stdout.match(/Output: (output\/scan-[^\s]+\.json)/);
+    expect(outputMatch).toBeTruthy();
+    const outputPath = outputMatch![1];
+
+    const content = readFileSync(outputPath, "utf-8");
+    const reports: ScanReport[] = JSON.parse(content);
 
     expect(Array.isArray(reports)).toBe(true);
     expect(reports.length).toBeGreaterThan(0);
