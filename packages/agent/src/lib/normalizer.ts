@@ -52,28 +52,34 @@ interface NormalizeToolInput {
   red_flags: string[];
 }
 
-export async function normalize(listing: Listing): Promise<NormalizedListing> {
+export async function normalize(
+  listing: Listing,
+  debug?: (msg: string) => void,
+): Promise<NormalizedListing> {
   if (process.env.LLM_MODE === "stub") {
     return stubNormalize(listing);
   }
+
+  const d = debug ?? (() => {});
+
+  const prompt = `Extract structured data from this marketplace listing:\n\nTitle: ${listing.title}\nDescription: ${listing.description}\nPrice: $${(listing.price / 100).toFixed(2)}\nCondition: ${listing.condition}`;
+
+  d(`normaliser › input:\n${prompt}`);
 
   const response = await anthropic.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 1024,
     tools: [NORMALIZE_TOOL],
     tool_choice: { type: "tool", name: "normalize_listing" },
-    messages: [
-      {
-        role: "user",
-        content: `Extract structured data from this marketplace listing:\n\nTitle: ${listing.title}\nDescription: ${listing.description}\nPrice: $${(listing.price / 100).toFixed(2)}\nCondition: ${listing.condition}`,
-      },
-    ],
+    messages: [{ role: "user", content: prompt }],
   });
 
   const toolUse = response.content.find((block) => block.type === "tool_use");
   if (!toolUse || toolUse.type !== "tool_use") {
     throw new Error("Normalizer: no tool_use block in response");
   }
+
+  d(`normaliser › output:\n${JSON.stringify(toolUse)}`);
 
   const input = toolUse.input as NormalizeToolInput;
 
