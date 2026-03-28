@@ -61,10 +61,13 @@ interface ScoreToolInput {
 export async function score(
   normalized: NormalizedListing,
   soldListings: SoldListing[],
+  debug?: (msg: string) => void,
 ): Promise<ScoredListing> {
   if (process.env.LLM_MODE === "stub") {
     return stubScore(normalized, soldListings);
   }
+
+  const d = debug ?? (() => {});
 
   const soldSummary = soldListings
     .map(
@@ -73,23 +76,24 @@ export async function score(
     )
     .join("\n");
 
+  const prompt = `Score this synthesizer listing as a deal.\n\nListing:\n- Model: ${normalized.canonicalModel}\n- Condition: ${normalized.conditionTier}\n- Price: $${(normalized.price / 100).toFixed(2)}\n- Extras: ${normalized.extras.join(", ") || "none"}\n- Red flags: ${normalized.redFlags.join(", ") || "none"}\n\nRecent sold listings for comparison:\n${soldSummary || "No sold data available."}`;
+
+  d(`scorer › input:\n${prompt}`);
+
   const response = await anthropic.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 1024,
     tools: [SCORE_TOOL],
     tool_choice: { type: "tool", name: "score_listing" },
-    messages: [
-      {
-        role: "user",
-        content: `Score this synthesizer listing as a deal.\n\nListing:\n- Model: ${normalized.canonicalModel}\n- Condition: ${normalized.conditionTier}\n- Price: $${(normalized.price / 100).toFixed(2)}\n- Extras: ${normalized.extras.join(", ") || "none"}\n- Red flags: ${normalized.redFlags.join(", ") || "none"}\n\nRecent sold listings for comparison:\n${soldSummary || "No sold data available."}`,
-      },
-    ],
+    messages: [{ role: "user", content: prompt }],
   });
 
   const toolUse = response.content.find((block) => block.type === "tool_use");
   if (!toolUse || toolUse.type !== "tool_use") {
     throw new Error("Scorer: no tool_use block in response");
   }
+
+  d(`scorer › output:\n${JSON.stringify(toolUse)}`);
 
   const input = toolUse.input as ScoreToolInput;
 
