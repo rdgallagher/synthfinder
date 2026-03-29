@@ -13,7 +13,8 @@ mkdirSync("output", { recursive: true });
 
 const logPath = `output/scan-${timestamp}.log`;
 const outputPath = `output/scan-${timestamp}.json`;
-const logger = createLogger(logPath);
+const debugEnabled = process.env.LOG_LEVEL === "debug";
+const logger = createLogger(logPath, debugEnabled);
 
 const mcpClient = new SynthfinderMcpClient();
 await mcpClient.connect();
@@ -23,8 +24,8 @@ try {
     watchlist,
     searchListings: (query) => mcpClient.searchListings(query),
     getSoldListings: (query, since) => mcpClient.getSoldListings(query, since),
-    normalize,
-    score,
+    normalize: (listing) => normalize(listing, logger.debug),
+    score: (normalized, soldListings) => score(normalized, soldListings, logger.debug),
     log: logger.log,
   });
 
