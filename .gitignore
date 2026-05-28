@@ -50,3 +50,6 @@ out/
 output/*.json
 output/*.txt
 !output/.gitkeep
+
+# Brainstorming session files
+.superpowers/
