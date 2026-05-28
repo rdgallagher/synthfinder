@@ -2,7 +2,7 @@
 
 An AI-powered deal scanner for vintage analog synthesizers. Given a watchlist of synth models, it fetches live listings, normalizes and scores each one using Claude Haiku, and outputs a structured deal report as JSON.
 
-**Current state:** Slice 2 complete — CLI scan with fixture marketplace data and real LLM scoring.
+**Current state:** CLI scan pipeline complete — live Reverb listings, LLM normalisation and scoring, structured JSON output, file-based logging with optional LLM debug output.
 
 ---
 
@@ -10,21 +10,23 @@ An AI-powered deal scanner for vintage analog synthesizers. Given a watchlist of
 
 ```bash
 npm install
+cp .env.example .env   # then fill in your API keys
 
-# Run the scanner with fixture data (no API key needed for data; LLM_MODE=stub skips LLM calls)
+# Run with fixture data — no API keys needed
 MARKETPLACE=fixture LLM_MODE=stub npm run scan
 
-# Run the scanner for real (requires ANTHROPIC_API_KEY)
-MARKETPLACE=fixture npm run scan
+# Run against live Reverb data (requires ANTHROPIC_API_KEY + REVERB_API_KEY in .env)
+npm run scan
 
-# Run the scanner against live Reverb data (requires both API keys)
-MARKETPLACE=reverb npm run scan
+# Show full LLM prompts and responses in the log file
+LOG_LEVEL=debug npm run scan
 ```
 
 ### Prerequisites
 
 - Node.js (latest LTS)
-- `ANTHROPIC_API_KEY` set in your environment (required unless `LLM_MODE=stub`)
+- `ANTHROPIC_API_KEY` — required for real LLM calls (normalizer + scorer)
+- `REVERB_API_KEY` — required for live Reverb listings; see `.env.example`
 
 ---
 
@@ -70,10 +72,13 @@ All commands run from the repo root:
 
 ## Environment Variables
 
+Set these in `.env` (see `.env.example`) — loaded automatically by `npm run scan` and `npm test`.
+
 | Variable | Values | Default | Effect |
 |----------|--------|---------|--------|
-| `MARKETPLACE` | `fixture` | `fixture` | Which marketplace client to use. `fixture` returns hardcoded Juno-106 data. |
+| `MARKETPLACE` | `reverb`, `fixture` | `reverb` | `reverb` fetches live Reverb listings; `fixture` uses hardcoded Juno-106 data (offline). |
 | `LLM_MODE` | `stub` or unset | real LLM | `stub` returns deterministic responses without making API calls. Used in tests. |
+| `LOG_LEVEL` | `debug` or unset | silent | `debug` writes LLM prompts and raw responses to the scan log file. |
 | `ANTHROPIC_API_KEY` | your key | — | Required for real LLM calls (normalizer, scorer, evals). |
 | `REVERB_API_KEY` | your key | — | Required for `MARKETPLACE=reverb`. Reverb Personal Access Token. |
 
@@ -148,9 +153,13 @@ MCP server factory. Registers three tools:
 
 Delegates to a `MarketplaceClient` implementation selected by the `MARKETPLACE` env var.
 
+### `packages/mcp-server/src/marketplaces/reverb-client.ts`
+
+`ReverbMarketplaceClient` — calls the Reverb API v3, filtering by `product_type=keyboards-and-synths&category=synths` to exclude parts and accessories. Results are mapped to domain types with prices in cents.
+
 ### `packages/mcp-server/src/marketplaces/fixture-client.ts`
 
-The only marketplace client currently implemented. Returns hardcoded Juno-106 fixture data — 4 active listings across varied conditions and prices, 3 sold listings for comp data.
+Offline alternative to the Reverb client. Returns hardcoded Juno-106 data — 4 active listings across varied conditions and prices, 3 sold listings for comp data. Used in tests and `MARKETPLACE=fixture` runs.
 
 ### `packages/agent/src/lib/scan.ts`
 
@@ -162,11 +171,11 @@ The orchestrator. Takes a `ScanDependencies` object (watchlist + functions for f
 
 ### `packages/agent/src/lib/normalizer.ts` and `scorer.ts`
 
-Each exports a single async function (`normalize`, `score`) that calls Claude Haiku with forced `tool_use`. When `LLM_MODE=stub`, returns a deterministic response without making an API call.
+Each exports a single async function (`normalize`, `score`) that calls Claude Haiku with forced `tool_use`. Both accept an optional `debug?` callback — when provided, the LLM prompt is logged before the call and the raw `tool_use` response after. When `LLM_MODE=stub`, returns a deterministic response without making an API call.
 
 ### `packages/agent/scripts/scan.ts`
 
-CLI entry point. Wires the MCP client, normalizer, and scorer into `scan()`, then prints `ScanReport[]` as JSON to stdout.
+CLI entry point. Wires the MCP client, normalizer, scorer, and logger into `scan()`. Writes a timestamped `.log` file and `.json` report to `output/`. Pass `LOG_LEVEL=debug` to include LLM interaction detail in the log.
 
 ### `evals/normalizer/` and `evals/scorer/`
 
@@ -177,11 +186,11 @@ Eval suites for measuring LLM accuracy. Not part of the test suite — run separ
 ## Testing
 
 ```bash
-npm test          # run all 23 tests
+npm test          # run all 39 tests
 npm test -- --testPathPattern scan.test  # run a specific test file
 ```
 
-Tests use `LLM_MODE=stub` and `MARKETPLACE=fixture` so they run offline with no API key. The e2e test (`scan.e2e.test.ts`) spawns the full CLI process to verify the end-to-end pipeline.
+Unit and e2e tests use `LLM_MODE=stub` and `MARKETPLACE=fixture` so they run offline with no API key. The integration test (`reverb-client.integration.test.ts`) hits the real Reverb API and is skipped automatically when `REVERB_API_KEY` is not set.
 
 ---
 
@@ -203,6 +212,5 @@ Significant decisions are recorded in `adr/`:
 
 ## What's Next
 
-- **Slice 3:** Real Reverb marketplace client (`ReverbMarketplaceClient`) replacing the fixture stub
-- **Slice 4:** Web UI (Next.js) to browse scan results
+- **Web UI:** Next.js interface to browse scan results (the `agent` package skeleton is already in place)
 - **Future:** Scheduled scans, alerts, multiple marketplace support
