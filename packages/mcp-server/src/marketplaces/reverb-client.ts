@@ -36,6 +36,15 @@ interface ReverbSearchResponse {
 
 type Fetcher = (url: string, init?: RequestInit) => Promise<Response>;
 
+function buildParams(fields: Record<string, string>): string {
+  const params = new URLSearchParams({
+    ...fields,
+    product_type: "keyboards-and-synths",
+    category: "synths",
+  });
+  return params.toString();
+}
+
 function mapListing(raw: ReverbListing): Listing {
   const imageUrl = raw.photos[0]?._links.full?.href;
   return {
@@ -63,13 +72,13 @@ export class ReverbMarketplaceClient implements MarketplaceClient {
   ) {}
 
   async searchListings(query: string): Promise<Listing[]> {
-    const url = `${REVERB_API_BASE}/listings?${new URLSearchParams({ query, per_page: "50" })}`;
+    const url = `${REVERB_API_BASE}/listings?${buildParams({ query, per_page: "50" })}`;
     const data = await this.get<ReverbSearchResponse>(url);
     return data.listings.map(mapListing);
   }
 
   async getSoldListings(query: string, since: Date): Promise<SoldListing[]> {
-    const url = `${REVERB_API_BASE}/listings?${new URLSearchParams({ query, state: "sold", per_page: "50" })}`;
+    const url = `${REVERB_API_BASE}/listings?${buildParams({ query, state: "sold", per_page: "50" })}`;
     const data = await this.get<ReverbSearchResponse>(url);
     return data.listings
       // TODO(smoke-test): verify published_at is the correct field for sold date — may need ended_at or updated_at

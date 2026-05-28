@@ -35,6 +35,17 @@ describe("ReverbMarketplaceClient", () => {
       expect(headers["Accept-Version"]).toBe("3.0");
     });
 
+    it("filters results to the synthesizers category", async () => {
+      const fetch = vi.fn().mockResolvedValue(makeResponse("search-juno-106.json"));
+      const client = new ReverbMarketplaceClient("test-key", fetch);
+
+      await client.searchListings("Roland Juno-106");
+
+      const [url] = fetch.mock.calls[0] as [string, RequestInit];
+      expect(url).toContain("product_type=keyboards-and-synths");
+      expect(url).toContain("category=synths");
+    });
+
     it("maps Reverb listings to Listing domain type", async () => {
       const fetch = vi.fn().mockResolvedValue(makeResponse("search-juno-106.json"));
       const client = new ReverbMarketplaceClient("test-key", fetch);
@@ -74,6 +85,17 @@ describe("ReverbMarketplaceClient", () => {
       expect(fetch).toHaveBeenCalledOnce();
       const [url] = fetch.mock.calls[0] as [string, RequestInit];
       expect(url).toContain("state=sold");
+    });
+
+    it("filters results to the synthesizers category", async () => {
+      const fetch = vi.fn().mockResolvedValue(makeResponse("sold-juno-106.json"));
+      const client = new ReverbMarketplaceClient("test-key", fetch);
+
+      await client.getSoldListings("Roland Juno-106", new Date("2026-01-01"));
+
+      const [url] = fetch.mock.calls[0] as [string, RequestInit];
+      expect(url).toContain("product_type=keyboards-and-synths");
+      expect(url).toContain("category=synths");
     });
 
     it("maps Reverb sold listings to SoldListing domain type", async () => {
