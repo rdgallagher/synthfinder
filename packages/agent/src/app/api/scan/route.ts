@@ -8,7 +8,14 @@ import { scan } from "../../../lib/scan.js";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  const { model } = (await request.json()) as { model: string };
+  const body = (await request.json()) as { model?: unknown };
+  if (typeof body.model !== "string" || body.model.trim() === "") {
+    return new Response(JSON.stringify({ error: "model is required" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  const model = body.model;
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -27,8 +34,8 @@ export async function POST(request: NextRequest) {
           watchlist: [{ model }],
           searchListings: (q) => mcpClient.searchListings(q),
           getSoldListings: (q, since) => mcpClient.getSoldListings(q, since),
-          normalize: (listing) => normalize(listing),
-          score: (normalized, soldListings) => score(normalized, soldListings),
+          normalize,
+          score,
           log: (message) => send("progress", { message }),
           onListing: (listing: ScoredListing) => send("result", { listing }),
         });
