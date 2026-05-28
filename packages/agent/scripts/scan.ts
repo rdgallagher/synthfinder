@@ -6,7 +6,7 @@ import { normalize } from "../src/lib/normalizer.js";
 import { score } from "../src/lib/scorer.js";
 import { createLogger } from "../src/lib/logger.js";
 
-const watchlist: WatchlistItem[] = [{ model: "Roland Juno-106" }];
+const watchlist: WatchlistItem[] = [{ model: process.env.MODEL ?? "Roland Juno-106" }];
 
 const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
 mkdirSync("output", { recursive: true });
