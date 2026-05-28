@@ -7,8 +7,8 @@
   "scripts": {
     "dev": "npm run dev --workspace=packages/agent",
     "build": "npm run build --workspace=packages/agent",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "node --env-file-if-exists=.env node_modules/.bin/vitest run",
+    "test:watch": "node --env-file-if-exists=.env node_modules/.bin/vitest",
     "lint": "eslint packages/",
     "lint:fix": "eslint packages/ --fix",
     "format": "prettier --write 'packages/*/src/**/*.{ts,tsx}'",

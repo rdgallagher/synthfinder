@@ -1,11 +1,16 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { Listing, SoldListing } from "@synthfinder/shared";
 import { SynthfinderMcpClient } from "./mcp-client.js";
 
 describe("SynthfinderMcpClient", () => {
   let mcpClient: SynthfinderMcpClient;
 
+  beforeEach(() => {
+    vi.stubEnv("MARKETPLACE", "fixture");
+  });
+
   afterEach(async () => {
+    vi.unstubAllEnvs();
     if (mcpClient) {
       await mcpClient.close();
     }
