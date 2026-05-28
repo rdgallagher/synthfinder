@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
       };
 
       const mcpClient = new SynthfinderMcpClient();
-      await mcpClient.connect();
 
       try {
+        await mcpClient.connect();
         await scan({
           watchlist: [{ model }],
           searchListings: (q) => mcpClient.searchListings(q),
