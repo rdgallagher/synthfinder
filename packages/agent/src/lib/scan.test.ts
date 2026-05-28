@@ -46,6 +46,23 @@ const fixtureScored: ScoredListing = {
 };
 
 describe("scan", () => {
+  it("calls onListing for each scored listing", async () => {
+    const onListing = vi.fn();
+    const { scan } = await import("./scan.js");
+
+    await scan({
+      watchlist: [{ model: "Roland Juno-106" }],
+      searchListings: vi.fn().mockResolvedValue([fixtureListing]),
+      getSoldListings: vi.fn().mockResolvedValue([fixtureSoldListing]),
+      normalize: vi.fn().mockResolvedValue(fixtureNormalized),
+      score: vi.fn().mockResolvedValue(fixtureScored),
+      onListing,
+    });
+
+    expect(onListing).toHaveBeenCalledOnce();
+    expect(onListing).toHaveBeenCalledWith(fixtureScored);
+  });
+
   it("orchestrates the pipeline: fetch → normalize → score → report", async () => {
     const mockSearchListings = vi.fn().mockResolvedValue([fixtureListing]);
     const mockGetSoldListings = vi.fn().mockResolvedValue([fixtureSoldListing]);

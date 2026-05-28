@@ -14,6 +14,7 @@ export interface ScanDependencies {
   normalize: (listing: Listing) => Promise<NormalizedListing>;
   score: (normalized: NormalizedListing, soldListings: SoldListing[]) => Promise<ScoredListing>;
   log?: (message: string) => void;
+  onListing?: (scored: ScoredListing) => void;
 }
 
 function formatPrice(cents: number): string {
@@ -55,6 +56,7 @@ export async function scan(deps: ScanDependencies): Promise<ScanReport[]> {
       log(`           → ${scored.dealTier}`);
 
       scoredListings.push(scored);
+      deps.onListing?.(scored);
     }
 
     reports.push({
