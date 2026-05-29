@@ -52,6 +52,45 @@ vi.mock("@anthropic-ai/sdk", () => ({
   },
 }));
 
+describe("computePriceStats", () => {
+  it("returns null for an empty list", async () => {
+    const { computePriceStats } = await import("./scorer.js");
+    expect(computePriceStats([])).toBeNull();
+  });
+
+  it("computes median, quartiles, and filtered median for a normal set", async () => {
+    const { computePriceStats } = await import("./scorer.js");
+    const listings = [100, 110, 120, 130, 140].map((p) => ({
+      ...fixtureSoldListings[0],
+      soldPrice: p * 100,
+    }));
+
+    const stats = computePriceStats(listings)!;
+
+    expect(stats.median).toBe(12000);
+    expect(stats.p25).toBe(11000);
+    expect(stats.p75).toBe(13000);
+    expect(stats.totalCount).toBe(5);
+    expect(stats.filteredCount).toBe(5);
+    expect(stats.filteredMedian).toBe(12000);
+  });
+
+  it("excludes high outliers from the filtered median", async () => {
+    const { computePriceStats } = await import("./scorer.js");
+    const prices = [100, 110, 120, 130, 500];
+    const listings = prices.map((p) => ({
+      ...fixtureSoldListings[0],
+      soldPrice: p * 100,
+    }));
+
+    const stats = computePriceStats(listings)!;
+
+    expect(stats.totalCount).toBe(5);
+    expect(stats.filteredCount).toBe(4);
+    expect(stats.filteredMedian).toBe(11500);
+  });
+});
+
 describe("scorer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -100,5 +139,25 @@ describe("scorer", () => {
     expect(result.reasoning).toContain("$800");
     expect(result.comparables).toBeTruthy();
     expect(result.normalizedListing).toBe(fixtureNormalized);
+  });
+
+  it("includes pre-computed price stats in the prompt", async () => {
+    mockCreate.mockResolvedValue({
+      content: [
+        {
+          type: "tool_use",
+          id: "tool-1",
+          name: "score_listing",
+          input: { deal_tier: "fair-deal", reasoning: "ok", comparables: "ok" },
+        },
+      ],
+    });
+
+    const { score } = await import("./scorer.js");
+    await score(fixtureNormalized, fixtureSoldListings);
+
+    // fixtureSoldListings soldPrices: [110000, 135000] → filtered median $1,225.00
+    const prompt = mockCreate.mock.calls[0][0].messages[0].content as string;
+    expect(prompt).toContain("$1,225.00");
   });
 });

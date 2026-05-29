@@ -29,6 +29,47 @@ const SCORE_TOOL = {
   },
 };
 
+function formatUSD(cents: number): string {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
+    cents / 100,
+  );
+}
+
+export interface PriceStats {
+  median: number;
+  filteredMedian: number;
+  p25: number;
+  p75: number;
+  totalCount: number;
+  filteredCount: number;
+}
+
+export function computePriceStats(soldListings: SoldListing[]): PriceStats | null {
+  if (soldListings.length === 0) return null;
+
+  const prices = [...soldListings.map((s) => s.soldPrice)].sort((a, b) => a - b);
+  const n = prices.length;
+
+  const median =
+    n % 2 === 0 ? (prices[n / 2 - 1] + prices[n / 2]) / 2 : prices[Math.floor(n / 2)];
+
+  const p25 = prices[Math.floor(n * 0.25)];
+  const p75 = prices[Math.floor(n * 0.75)];
+  const iqr = p75 - p25;
+
+  const lower = p25 - 1.5 * iqr;
+  const upper = p75 + 1.5 * iqr;
+  const filtered = prices.filter((p) => p >= lower && p <= upper);
+
+  const fn = filtered.length;
+  const filteredMedian =
+    fn % 2 === 0
+      ? (filtered[fn / 2 - 1] + filtered[fn / 2]) / 2
+      : filtered[Math.floor(fn / 2)];
+
+  return { median, filteredMedian, p25, p75, totalCount: n, filteredCount: filtered.length };
+}
+
 function stubScore(normalized: NormalizedListing, soldListings: SoldListing[]): ScoredListing {
   const avgSoldPrice =
     soldListings.length > 0
@@ -69,14 +110,17 @@ export async function score(
 
   const d = debug ?? (() => {});
 
+  const stats = computePriceStats(soldListings);
+
   const soldSummary = soldListings
-    .map(
-      (s) =>
-        `- ${s.title}: sold for $${(s.soldPrice / 100).toFixed(2)} on ${s.soldDate} (${s.condition})`,
-    )
+    .map((s) => `- ${s.title}: sold for ${formatUSD(s.soldPrice)} on ${s.soldDate} (${s.condition})`)
     .join("\n");
 
-  const prompt = `Score this synthesizer listing as a deal.\n\nListing:\n- Model: ${normalized.canonicalModel}\n- Condition: ${normalized.conditionTier}\n- Price: $${(normalized.price / 100).toFixed(2)}\n- Extras: ${normalized.extras.join(", ") || "none"}\n- Red flags: ${normalized.redFlags.join(", ") || "none"}\n\nRecent sold listings for comparison:\n${soldSummary || "No sold data available."}`;
+  const statsSummary = stats
+    ? `Market price summary (${stats.filteredCount} of ${stats.totalCount} recent sales, ${stats.totalCount - stats.filteredCount} outliers excluded):\n- Filtered median: ${formatUSD(stats.filteredMedian)}\n- Typical range (p25–p75): ${formatUSD(stats.p25)} – ${formatUSD(stats.p75)}`
+    : "No sold data available.";
+
+  const prompt = `Score this synthesizer listing as a deal.\n\nListing:\n- Model: ${normalized.canonicalModel}\n- Condition: ${normalized.conditionTier}\n- Price: ${formatUSD(normalized.price)}\n- Extras: ${normalized.extras.join(", ") || "none"}\n- Red flags: ${normalized.redFlags.join(", ") || "none"}\n\n${statsSummary}\n\nRecent sold listings for reference:\n${soldSummary || "No sold data available."}`;
 
   d(`scorer › input:\n${prompt}`);
 
