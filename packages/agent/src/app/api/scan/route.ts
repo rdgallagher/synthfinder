@@ -37,7 +37,10 @@ export async function POST(request: NextRequest) {
           normalize,
           score,
           log: (message) => send("progress", { message }),
-          onListing: (listing: ScoredListing) => send("result", { listing }),
+          onListing: (listing: ScoredListing) => {
+            send("progress", { message: `           ↳ ${listing.reasoning}` });
+            send("result", { listing });
+          },
         });
       } catch (err) {
         send("error", { message: String(err) });
