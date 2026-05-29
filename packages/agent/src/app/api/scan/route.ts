@@ -1,9 +1,9 @@
 import type { NextRequest } from "next/server";
 import type { ScoredListing } from "@synthfinder/shared";
-import { SynthfinderMcpClient } from "../../../lib/mcp-client.js";
-import { normalize } from "../../../lib/normalizer.js";
-import { score } from "../../../lib/scorer.js";
-import { scan } from "../../../lib/scan.js";
+import { SynthfinderMcpClient } from "../../../lib/mcp-client";
+import { normalize } from "../../../lib/normalizer";
+import { score } from "../../../lib/scorer";
+import { scan } from "../../../lib/scan";
 
 export const dynamic = "force-dynamic";
 
