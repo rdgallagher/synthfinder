@@ -161,6 +161,7 @@ export default function Home() {
 
       if (!response.ok || !response.body) {
         setError(`Request failed: ${response.status}`);
+        response.body?.cancel();
         return;
       }
 
@@ -332,7 +333,12 @@ export default function Home() {
             Results will appear here as the scan runs
           </div>
         ) : (
-          results.map((scored, i) => <ResultCard key={i} scored={scored} />)
+          results.map((scored) => (
+            <ResultCard
+              key={scored.normalizedListing.originalListing.id}
+              scored={scored}
+            />
+          ))
         )}
       </div>
     </div>
