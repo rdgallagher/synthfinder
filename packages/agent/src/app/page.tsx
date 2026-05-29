@@ -131,7 +131,7 @@ function ResultCard({ scored }: { scored: ScoredListing }) {
           rel="noopener noreferrer"
           style={{ color: "var(--accent)", fontSize: 12 }}
         >
-          ↗ View on Reverb
+          ↗ View on {ol.marketplace}
         </a>
       </div>
     </div>
