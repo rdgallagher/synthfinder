@@ -38,6 +38,18 @@ describe("normalizer", () => {
     expect(mockCreate).not.toHaveBeenCalled();
   });
 
+  it("throws when the API response contains no tool_use block", async () => {
+    mockCreate.mockResolvedValue({
+      content: [{ type: "text", text: "I cannot help with that." }],
+      stop_reason: "end_turn",
+    });
+
+    const { normalize } = await import("./normalizer.js");
+    await expect(normalize(fixtureListing)).rejects.toThrow(
+      "Normalizer: no tool_use block in response",
+    );
+  });
+
   it("calls Anthropic API with tool_use when LLM_MODE is not stub", async () => {
     mockCreate.mockResolvedValue({
       content: [

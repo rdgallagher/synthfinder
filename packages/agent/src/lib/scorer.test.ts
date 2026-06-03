@@ -139,6 +139,42 @@ describe("scorer", () => {
     expect(mockCreate).not.toHaveBeenCalled();
   });
 
+  it("stub scores as strong-bargain when listing price is far below average sold", async () => {
+    process.env.LLM_MODE = "stub";
+    // avg sold = $1,000; listing at $600 = 60% of avg → strong-bargain (< 75%)
+    const cheapListing = { ...fixtureNormalized, price: 60000 };
+    const soldAt100k = [{ ...fixtureSoldListings[0], soldPrice: 100000 }];
+
+    const { score } = await import("./scorer.js");
+    const result = await score(cheapListing, soldAt100k);
+
+    expect(result.dealTier).toBe("strong-bargain");
+  });
+
+  it("stub scores as overpriced when listing price is well above average sold", async () => {
+    process.env.LLM_MODE = "stub";
+    // avg sold = $1,000; listing at $1,200 = 120% of avg → overpriced (> 110%)
+    const expensiveListing = { ...fixtureNormalized, price: 120000 };
+    const soldAt100k = [{ ...fixtureSoldListings[0], soldPrice: 100000 }];
+
+    const { score } = await import("./scorer.js");
+    const result = await score(expensiveListing, soldAt100k);
+
+    expect(result.dealTier).toBe("overpriced");
+  });
+
+  it("throws when the API response contains no tool_use block", async () => {
+    mockCreate.mockResolvedValue({
+      content: [{ type: "text", text: "I cannot help with that." }],
+      stop_reason: "end_turn",
+    });
+
+    const { score } = await import("./scorer.js");
+    await expect(score(fixtureNormalized, fixtureSoldListings)).rejects.toThrow(
+      "Scorer: no tool_use block in response",
+    );
+  });
+
   it("calls Anthropic API with tool_use when LLM_MODE is not stub", async () => {
     mockCreate.mockResolvedValue({
       content: [
