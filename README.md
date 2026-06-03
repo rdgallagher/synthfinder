@@ -1,8 +1,8 @@
 # SynthFinder Agent
 
-An AI-powered deal scanner for vintage analog synthesizers. Given a watchlist of synth models, it fetches live listings, normalizes and scores each one using Claude Haiku, and outputs a structured deal report as JSON.
+An AI-powered deal scanner for vintage analog synthesizers. Given a synth model, it fetches live Reverb listings, normalizes and scores each one using Claude Haiku, and presents the results as a real-time streaming web UI or a structured JSON report via CLI.
 
-**Current state:** CLI scan pipeline complete — live Reverb listings, LLM normalisation and scoring, structured JSON output, file-based logging with optional LLM debug output.
+**Current state:** Web UI and CLI both operational — live Reverb listings, LLM normalisation and scoring, SSE-streamed results, file-based logging with optional LLM debug output.
 
 ---
 
@@ -11,12 +11,30 @@ An AI-powered deal scanner for vintage analog synthesizers. Given a watchlist of
 ```bash
 npm install
 cp .env.example .env   # then fill in your API keys
+```
 
+### Web UI
+
+```bash
+# Create packages/agent/.env.local with your keys (Next.js reads from the package directory)
+echo "REVERB_API_KEY=your_key\nMARKETPLACE=reverb\nANTHROPIC_API_KEY=your_key" > packages/agent/.env.local
+
+npm run dev   # open http://localhost:3000
+```
+
+Enter a model name (e.g. `Roland Juno-106`), click **Scan**, and watch progress and results stream in real time.
+
+### CLI
+
+```bash
 # Run with fixture data — no API keys needed
 MARKETPLACE=fixture LLM_MODE=stub npm run scan
 
 # Run against live Reverb data (requires ANTHROPIC_API_KEY + REVERB_API_KEY in .env)
 npm run scan
+
+# Scan a different model
+MODEL="Yamaha DX7" npm run scan
 
 # Show full LLM prompts and responses in the log file
 LOG_LEVEL=debug npm run scan
@@ -36,9 +54,11 @@ LOG_LEVEL=debug npm run scan
 packages/
   shared/              # @synthfinder/shared — domain types and interfaces
   mcp-server/          # @synthfinder/mcp-server — marketplace data via MCP
-  agent/               # Next.js App Router — CLI entry point and (future) web UI
-    scripts/scan.ts    # CLI entry point
+  agent/               # Next.js App Router — web UI + CLI entry point
+    src/app/           # Next.js pages and API routes
+      api/scan/        # POST /api/scan — SSE streaming endpoint
     src/lib/           # Core agent logic (framework-agnostic)
+    scripts/scan.ts    # CLI entry point
 
 evals/
   normalizer/          # Eval cases and runner for the normalizer
@@ -56,6 +76,7 @@ All commands run from the repo root:
 
 | Command | Description |
 |---------|-------------|
+| `npm run dev` | Start the web UI dev server (http://localhost:3000) |
 | `npm run scan` | Run the deal scanner CLI |
 | `npm test` | Run all tests (Vitest) |
 | `npm run test:watch` | Vitest in watch mode |
@@ -63,7 +84,6 @@ All commands run from the repo root:
 | `npm run lint` | ESLint |
 | `npm run format` | Prettier (write) |
 | `npm run format:check` | Prettier (check) |
-| `npm run dev` | Next.js dev server |
 | `npm run eval:normalizer` | Run normalizer evals (requires API key) |
 | `npm run eval:scorer` | Run scorer evals (requires API key) |
 | `npm run eval` | Run all evals |
@@ -72,15 +92,16 @@ All commands run from the repo root:
 
 ## Environment Variables
 
-Set these in `.env` (see `.env.example`) — loaded automatically by `npm run scan` and `npm test`.
+The CLI and tests read from `.env` in the repo root (loaded automatically via `--env-file-if-exists`). The web UI reads from `packages/agent/.env.local` — create this separately, it is gitignored.
 
 | Variable | Values | Default | Effect |
 |----------|--------|---------|--------|
-| `MARKETPLACE` | `reverb`, `fixture` | `reverb` | `reverb` fetches live Reverb listings; `fixture` uses hardcoded Juno-106 data (offline). |
-| `LLM_MODE` | `stub` or unset | real LLM | `stub` returns deterministic responses without making API calls. Used in tests. |
-| `LOG_LEVEL` | `debug` or unset | silent | `debug` writes LLM prompts and raw responses to the scan log file. |
 | `ANTHROPIC_API_KEY` | your key | — | Required for real LLM calls (normalizer, scorer, evals). |
 | `REVERB_API_KEY` | your key | — | Required for `MARKETPLACE=reverb`. Reverb Personal Access Token. |
+| `MARKETPLACE` | `reverb`, `fixture` | `reverb` | `reverb` fetches live Reverb listings; `fixture` uses hardcoded Juno-106 data (offline). |
+| `MODEL` | any model name | `Roland Juno-106` | CLI only — model to scan for. |
+| `LLM_MODE` | `stub` or unset | real LLM | `stub` returns deterministic responses without API calls. Used in tests. |
+| `LOG_LEVEL` | `debug` or unset | silent | `debug` writes LLM prompts and raw responses to the scan log file. |
 
 ---
 
@@ -89,14 +110,15 @@ Set these in `.env` (see `.env.example`) — loaded automatically by `npm run sc
 ### Data Flow
 
 ```
-Watchlist (hardcoded: Roland Juno-106)
+Model name (from UI input or MODEL env var)
   └─ For each item:
        ├─ MCP tool: search_listings(query)      → Listing[]
        ├─ MCP tool: get_sold_listings(query)     → SoldListing[]
        └─ For each listing:
             ├─ normalize(listing)               → NormalizedListing
             └─ score(normalized, soldListings)  → ScoredListing
-  └─ ScanReport[] → stdout as JSON
+  └─ Web UI: SSE-streamed result cards + progress log
+     CLI:    ScanReport[] → stdout as JSON + timestamped output/ files
 ```
 
 ### Two-Process Architecture
@@ -120,9 +142,9 @@ Two Claude Haiku calls per listing, each using forced `tool_use` for structured 
    - Condition tiers: `mint` | `excellent` | `good` | `fair` | `poor` | `for-parts`
 
 2. **Scorer** — `NormalizedListing` + `SoldListing[]` → `ScoredListing`
-   - Compares listing price to recent sold comps
+   - Pre-computes IQR-filtered price statistics (median, p25, p75) from recent sold comps and includes them in the prompt as a numeric anchor
    - Deal tiers: `strong-bargain` | `fair-deal` | `overpriced`
-   - Outputs tier, human-readable reasoning, and comparables summary
+   - Outputs tier, reasoning, and comparables summary
 
 ---
 
@@ -144,6 +166,18 @@ MarketplaceClient// interface: searchListings(), getSoldListings()
 
 Prices are stored in **cents** (integers) throughout.
 
+### `packages/agent/src/app/api/scan/route.ts`
+
+`POST /api/scan` — accepts `{ model: string }`, streams results as Server-Sent Events. Three event types: `progress` (log lines including per-listing reasoning), `result` (one `ScoredListing` per listing as it completes), `error` (on failure).
+
+### `packages/agent/src/app/page.tsx`
+
+Split-panel web UI. Left panel: model input, Scan button, streaming progress log. Right panel: result cards sorted by deal tier (strong bargains first), appearing one by one as each listing is scored.
+
+### `packages/agent/src/lib/scan.ts`
+
+The orchestrator. Takes a `ScanDependencies` object (watchlist + functions for fetching, normalizing, scoring) and wires them into the pipeline. Dependency injection means it's testable without spawning processes or calling LLMs. Both the web API route and the CLI entry point wire their own dependencies into this function.
+
 ### `packages/mcp-server/src/server.ts`
 
 MCP server factory. Registers three tools:
@@ -160,10 +194,6 @@ Delegates to a `MarketplaceClient` implementation selected by the `MARKETPLACE` 
 ### `packages/mcp-server/src/marketplaces/fixture-client.ts`
 
 Offline alternative to the Reverb client. Returns hardcoded Juno-106 data — 4 active listings across varied conditions and prices, 3 sold listings for comp data. Used in tests and `MARKETPLACE=fixture` runs.
-
-### `packages/agent/src/lib/scan.ts`
-
-The orchestrator. Takes a `ScanDependencies` object (watchlist + functions for fetching, normalizing, scoring) and wires them into the pipeline. Dependency injection means it's testable without spawning processes or calling LLMs.
 
 ### `packages/agent/src/lib/mcp-client.ts`
 
@@ -186,11 +216,14 @@ Eval suites for measuring LLM accuracy. Not part of the test suite — run separ
 ## Testing
 
 ```bash
-npm test          # run all 39 tests
+npm test          # run all tests
 npm test -- --testPathPattern scan.test  # run a specific test file
 ```
 
-Unit and e2e tests use `LLM_MODE=stub` and `MARKETPLACE=fixture` so they run offline with no API key. The integration test (`reverb-client.integration.test.ts`) hits the real Reverb API and is skipped automatically when `REVERB_API_KEY` is not set.
+Unit and e2e tests use `LLM_MODE=stub` and `MARKETPLACE=fixture` so they run offline without API keys. Integration tests hit real APIs and are skipped automatically when the relevant key is not set:
+
+- `reverb-client.integration.test.ts` — requires `REVERB_API_KEY`
+- `scan.integration.test.ts` — requires both `REVERB_API_KEY` and `ANTHROPIC_API_KEY`; runs the full pipeline (MCP connect → Reverb search → Anthropic normalize + score) against 2 real listings
 
 ---
 
@@ -212,5 +245,6 @@ Significant decisions are recorded in `adr/`:
 
 ## What's Next
 
-- **Web UI:** Next.js interface to browse scan results (the `agent` package skeleton is already in place)
-- **Future:** Scheduled scans, alerts, multiple marketplace support
+- Scheduled scans and deal alerts
+- Multiple marketplace support
+- Configurable watchlist from the UI
