@@ -57,9 +57,12 @@ export function computePriceStats(soldListings: SoldListing[]): PriceStats | nul
   const p75 = prices[Math.floor(n * 0.75)];
   const iqr = p75 - p25;
 
-  const lower = p25 - 1.5 * iqr;
   const upper = p75 + 1.5 * iqr;
-  const filtered = prices.filter((p) => p >= lower && p <= upper);
+  const filtered = prices.filter((p) => p <= upper);
+
+  if (filtered.length === 0) {
+    return { median, filteredMedian: median, p25, p75, totalCount: n, filteredCount: 0 };
+  }
 
   const fn = filtered.length;
   const filteredMedian =

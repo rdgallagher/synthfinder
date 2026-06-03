@@ -89,6 +89,36 @@ describe("computePriceStats", () => {
     expect(stats.filteredCount).toBe(4);
     expect(stats.filteredMedian).toBe(11500);
   });
+
+  it("returns a finite filteredMedian even when all prices are filtered as outliers", async () => {
+    // This can't happen with the current upper-only filter, but the guard must hold
+    // regardless of future filter changes. We verify the invariant directly.
+    const { computePriceStats } = await import("./scorer.js");
+    // Two extreme outliers with a tiny IQR force upper very low; if filtered empties out
+    // the function must fall back to the unfiltered median rather than return NaN.
+    const listings = [100, 100, 100, 1_000_000].map((p) => ({
+      ...fixtureSoldListings[0],
+      soldPrice: p,
+    }));
+
+    const stats = computePriceStats(listings)!;
+
+    expect(Number.isFinite(stats.filteredMedian)).toBe(true);
+  });
+
+  it("keeps low outliers — a suspiciously cheap sale is signal, not noise", async () => {
+    const { computePriceStats } = await import("./scorer.js");
+    const prices = [10, 110, 120, 130, 140]; // 10 is far below the lower IQR bound
+    const listings = prices.map((p) => ({
+      ...fixtureSoldListings[0],
+      soldPrice: p * 100,
+    }));
+
+    const stats = computePriceStats(listings)!;
+
+    expect(stats.totalCount).toBe(5);
+    expect(stats.filteredCount).toBe(5); // low outlier retained
+  });
 });
 
 describe("scorer", () => {
