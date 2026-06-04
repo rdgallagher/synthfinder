@@ -38,7 +38,10 @@ const fixtureSoldListings: SoldListing[] = [
 const mockCreate = vi.fn();
 vi.mock("@anthropic-ai/sdk", () => ({
   default: class {
+    // No-skill path uses messages.create; skill path uses beta.messages.create.
+    // Both point to the same mock so tests work regardless of path.
     messages = { create: mockCreate };
+    beta = { messages: { create: mockCreate } };
   },
 }));
 
@@ -46,6 +49,7 @@ describe("analyzeListings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     delete process.env.LLM_MODE;
+    delete process.env.ANTHROPIC_SKILL_ID;
   });
 
   it("makes a single API call for all listings", async () => {
@@ -217,6 +221,87 @@ describe("analyzeListings", () => {
     await expect(analyzeListings([fixtureListing], fixtureSoldListings)).rejects.toThrow(
       "Analyzer: no tool_use block in response",
     );
+  });
+
+  it("uses code execution + auto tool_choice when ANTHROPIC_SKILL_ID is set", async () => {
+    process.env.ANTHROPIC_SKILL_ID = "skill_01test";
+    const toolUseResponse = {
+      content: [
+        {
+          type: "tool_use",
+          id: "tool-1",
+          name: "analyze_listings",
+          input: {
+            results: [
+              {
+                index: 0,
+                canonical_model: "Roland Juno-106",
+                condition_tier: "excellent",
+                extras: [],
+                red_flags: [],
+                deal_tier: "fair-deal",
+                reasoning: "ok",
+                comparables: "ok",
+              },
+            ],
+          },
+        },
+      ],
+      stop_reason: "tool_use",
+      container: { id: "container-1", expires_at: "2099-01-01T00:00:00Z", skills: [] },
+    };
+    mockCreate.mockResolvedValue(toolUseResponse);
+
+    const { analyzeListings } = await import("./analyzer.js");
+    await analyzeListings([fixtureListing], fixtureSoldListings);
+
+    const firstCall = mockCreate.mock.calls[0][0];
+    expect(firstCall.tool_choice).toEqual({ type: "auto" });
+    expect(firstCall.tools.some((t: { type: string }) => t.type === "code_execution_20250825")).toBe(true);
+    expect(firstCall.container.skills[0]).toMatchObject({ type: "custom", skill_id: "skill_01test" });
+  });
+
+  it("falls back to phase 2 when skill phase 1 ends without analyze_listings call", async () => {
+    process.env.ANTHROPIC_SKILL_ID = "skill_01test";
+    const phase1Response = {
+      content: [{ type: "text", text: "I have read the skill files." }],
+      stop_reason: "end_turn",
+      container: { id: "container-1", expires_at: "2099-01-01T00:00:00Z", skills: [] },
+    };
+    const phase2Response = {
+      content: [
+        {
+          type: "tool_use",
+          id: "tool-2",
+          name: "analyze_listings",
+          input: {
+            results: [
+              {
+                index: 0,
+                canonical_model: "Roland Juno-106",
+                condition_tier: "good",
+                extras: [],
+                red_flags: [],
+                deal_tier: "strong-bargain",
+                reasoning: "Good deal",
+                comparables: "1 sold",
+              },
+            ],
+          },
+        },
+      ],
+      stop_reason: "tool_use",
+      container: { id: "container-1", expires_at: "2099-01-01T00:00:00Z", skills: [] },
+    };
+    mockCreate.mockResolvedValueOnce(phase1Response).mockResolvedValueOnce(phase2Response);
+
+    const { analyzeListings } = await import("./analyzer.js");
+    const results = await analyzeListings([fixtureListing], fixtureSoldListings);
+
+    expect(mockCreate).toHaveBeenCalledTimes(2);
+    const phase2Call = mockCreate.mock.calls[1][0];
+    expect(phase2Call.tool_choice).toEqual({ type: "tool", name: "analyze_listings" });
+    expect(results[0].dealTier).toBe("strong-bargain");
   });
 
   it("uses stub mode when LLM_MODE=stub", async () => {

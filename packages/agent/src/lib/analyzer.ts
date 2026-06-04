@@ -1,8 +1,16 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { BetaContentBlockParam, BetaMessageParam } from "@anthropic-ai/sdk/resources/beta/messages/messages";
 import type { Listing, SoldListing, ScoredListing, NormalizedListing, DealTier, ConditionTier } from "@synthfinder/shared";
 import { computePriceStats } from "./scorer";
 
 const anthropic = new Anthropic();
+
+const BETAS = ["code-execution-2025-08-25", "skills-2025-10-02"] as const;
+
+const CODE_EXECUTION_TOOL = {
+  type: "code_execution_20250825" as const,
+  name: "code_execution" as const,
+};
 
 const ANALYZE_TOOL = {
   name: "analyze_listings" as const,
@@ -124,6 +132,27 @@ function stubAnalyze(listings: Listing[], soldListings: SoldListing[]): ScoredLi
   });
 }
 
+function mapToScoredListings(input: AnalyzeToolInput, listings: Listing[]): ScoredListing[] {
+  const sorted = [...input.results].sort((a, b) => a.index - b.index);
+  return sorted.map((result) => {
+    const listing = listings[result.index];
+    const normalized: NormalizedListing = {
+      canonicalModel: result.canonical_model,
+      conditionTier: result.condition_tier,
+      price: listing.price,
+      extras: result.extras,
+      redFlags: result.red_flags,
+      originalListing: listing,
+    };
+    return {
+      normalizedListing: normalized,
+      dealTier: result.deal_tier,
+      reasoning: result.reasoning,
+      comparables: result.comparables,
+    };
+  });
+}
+
 export async function analyzeListings(
   listings: Listing[],
   soldListings: SoldListing[],
@@ -134,6 +163,7 @@ export async function analyzeListings(
   }
 
   const d = debug ?? (() => {});
+  const skillId = process.env.ANTHROPIC_SKILL_ID;
 
   const stats = computePriceStats(soldListings);
 
@@ -157,48 +187,80 @@ export async function analyzeListings(
 
   d(`analyzer › input (${listings.length} listings):\n${stableBlock}\n\n${variableBlock}`);
 
-  const response = await anthropic.messages.create({
+  const userContent: BetaContentBlockParam[] = [
+    { type: "text", text: stableBlock },
+    { type: "text", text: variableBlock },
+  ];
+
+  // Without a skill: single forced tool call via the standard API
+  if (!skillId) {
+    const response = await anthropic.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 16384,
+      tools: [ANALYZE_TOOL],
+      tool_choice: { type: "tool", name: "analyze_listings" },
+      messages: [{ role: "user", content: [{ type: "text", text: stableBlock }, { type: "text", text: variableBlock }] }],
+    });
+
+    const toolUse = response.content.find((b) => b.type === "tool_use");
+    if (!toolUse || toolUse.type !== "tool_use") {
+      throw new Error("Analyzer: no tool_use block in response");
+    }
+    d(`analyzer › output:\n${JSON.stringify(toolUse)}`);
+    return mapToScoredListings(toolUse.input as AnalyzeToolInput, listings);
+  }
+
+  // With a skill: Phase 1 — let Claude read skill files via code execution
+  const container = { skills: [{ type: "custom" as const, skill_id: skillId, version: "latest" }] };
+  let messages: BetaMessageParam[] = [{ role: "user", content: userContent }];
+  let containerId: string | undefined;
+
+  let response = await anthropic.beta.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 16384,
-    tools: [ANALYZE_TOOL],
-    tool_choice: { type: "tool", name: "analyze_listings" },
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "text", text: stableBlock },
-          { type: "text", text: variableBlock },
-        ],
-      },
-    ],
+    betas: [...BETAS],
+    container,
+    tools: [CODE_EXECUTION_TOOL, ANALYZE_TOOL],
+    tool_choice: { type: "auto" },
+    messages,
   });
 
-  const toolUse = response.content.find((block) => block.type === "tool_use");
+  if (response.container?.id) containerId = response.container.id;
+
+  while (response.stop_reason === "pause_turn") {
+    messages = [...messages, { role: "assistant", content: response.content }];
+    response = await anthropic.beta.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 16384,
+      betas: [...BETAS],
+      container: { id: containerId, ...container },
+      tools: [CODE_EXECUTION_TOOL, ANALYZE_TOOL],
+      tool_choice: { type: "auto" },
+      messages,
+    });
+    if (response.container?.id) containerId = response.container.id;
+  }
+
+  // Phase 2: if Claude didn't call analyze_listings yet, force it now
+  let toolUse = response.content.find((b) => b.type === "tool_use" && b.name === "analyze_listings");
+  if (!toolUse) {
+    messages = [...messages, { role: "assistant", content: response.content }];
+    response = await anthropic.beta.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 16384,
+      betas: [...BETAS],
+      container: { id: containerId, ...container },
+      tools: [ANALYZE_TOOL],
+      tool_choice: { type: "tool", name: "analyze_listings" },
+      messages,
+    });
+    toolUse = response.content.find((b) => b.type === "tool_use");
+  }
+
   if (!toolUse || toolUse.type !== "tool_use") {
     throw new Error("Analyzer: no tool_use block in response");
   }
 
   d(`analyzer › output:\n${JSON.stringify(toolUse)}`);
-
-  const input = toolUse.input as AnalyzeToolInput;
-  const sorted = [...input.results].sort((a, b) => a.index - b.index);
-
-  return sorted.map((result) => {
-    const listing = listings[result.index];
-    const normalized: NormalizedListing = {
-      canonicalModel: result.canonical_model,
-      conditionTier: result.condition_tier,
-      price: listing.price,
-      extras: result.extras,
-      redFlags: result.red_flags,
-      originalListing: listing,
-    };
-
-    return {
-      normalizedListing: normalized,
-      dealTier: result.deal_tier,
-      reasoning: result.reasoning,
-      comparables: result.comparables,
-    };
-  });
+  return mapToScoredListings(toolUse.input as AnalyzeToolInput, listings);
 }
