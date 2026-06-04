@@ -72,9 +72,19 @@ export class ReverbMarketplaceClient implements MarketplaceClient {
   ) {}
 
   async searchListings(query: string): Promise<Listing[]> {
-    const url = `${REVERB_API_BASE}/listings?${buildParams({ query, per_page: "50" })}`;
-    const data = await this.get<ReverbSearchResponse>(url);
-    return data.listings.map(mapListing);
+    const perPage = 50;
+    const all: Listing[] = [];
+    let page = 1;
+
+    while (true) {
+      const url = `${REVERB_API_BASE}/listings?${buildParams({ query, per_page: String(perPage), page: String(page) })}`;
+      const data = await this.get<ReverbSearchResponse>(url);
+      all.push(...data.listings.map(mapListing));
+      if (data.listings.length < perPage) break;
+      page++;
+    }
+
+    return all;
   }
 
   async getSoldListings(query: string, since: Date): Promise<SoldListing[]> {

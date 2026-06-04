@@ -11,6 +11,23 @@ function makeResponse(fixture: string): Response {
   return new Response(body, { status: 200, headers: { "Content-Type": "application/json" } });
 }
 
+function makePageResponse(count: number, page: number, perPage = 50): Response {
+  const listings = Array.from({ length: count }, (_, i) => ({
+    id: page * 1000 + i,
+    title: `Listing ${page}-${i}`,
+    description: "Test",
+    price: { amount: "100.00", amount_cents: 10000, currency: "USD" },
+    condition: { display_name: "Good" },
+    _links: { web: { href: `https://reverb.com/item/${page * 1000 + i}` } },
+    photos: [],
+    published_at: "2026-01-01T00:00:00Z",
+  }));
+  return new Response(
+    JSON.stringify({ listings, total: 75, current_page: page, per_page: perPage }),
+    { status: 200, headers: { "Content-Type": "application/json" } },
+  );
+}
+
 describe("ReverbMarketplaceClient", () => {
   it("implements MarketplaceClient", () => {
     const fetch = vi.fn();
@@ -72,6 +89,29 @@ describe("ReverbMarketplaceClient", () => {
 
       expect(noPhoto).toBeDefined();
       expect(noPhoto!.imageUrl).toBeUndefined();
+    });
+
+    it("stops after a single page when results are fewer than per_page", async () => {
+      const fetch = vi.fn().mockResolvedValue(makeResponse("search-juno-106.json"));
+      const client = new ReverbMarketplaceClient("test-key", fetch);
+
+      await client.searchListings("Roland Juno-106");
+
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("fetches subsequent pages when the first page is full", async () => {
+      const fetch = vi.fn()
+        .mockResolvedValueOnce(makePageResponse(50, 1))
+        .mockResolvedValueOnce(makePageResponse(25, 2));
+      const client = new ReverbMarketplaceClient("test-key", fetch);
+
+      const listings = await client.searchListings("Roland Juno-106");
+
+      expect(fetch).toHaveBeenCalledTimes(2);
+      expect(listings).toHaveLength(75);
+      const [url2] = fetch.mock.calls[1] as [string];
+      expect(url2).toContain("page=2");
     });
   });
 
