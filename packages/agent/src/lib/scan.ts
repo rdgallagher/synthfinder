@@ -4,7 +4,8 @@ export interface ScanDependencies {
   watchlist: WatchlistItem[];
   searchListings: (query: string) => Promise<Listing[]>;
   getSoldListings: (query: string, since: Date) => Promise<SoldListing[]>;
-  analyzeListings: (listings: Listing[], soldListings: SoldListing[]) => Promise<ScoredListing[]>;
+  analyzeListings: (listings: Listing[], soldListings: SoldListing[], knowledge?: string) => Promise<ScoredListing[]>;
+  loadKnowledge?: (model: string) => string | undefined;
   log?: (message: string) => void;
   onListing?: (scored: ScoredListing) => void;
 }
@@ -31,8 +32,9 @@ export async function scan(deps: ScanDependencies): Promise<ScanReport[]> {
     const soldListings = await deps.getSoldListings(query, since);
     log(`Found ${listings.length} listings, ${soldListings.length} sold comps (last 90 days)`);
 
+    const knowledge = deps.loadKnowledge?.(item.model);
     log(`  Analysing ${listings.length} listings...`);
-    const scoredListings = await deps.analyzeListings(listings, soldListings);
+    const scoredListings = await deps.analyzeListings(listings, soldListings, knowledge);
     for (const scored of scoredListings) {
       log(`  "${scored.normalizedListing.originalListing.title}" (${formatPrice(scored.normalizedListing.price)}) → ${scored.dealTier}`);
       deps.onListing?.(scored);

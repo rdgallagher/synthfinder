@@ -1,9 +1,11 @@
 import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import type { WatchlistItem } from "@synthfinder/shared";
 import { scan } from "../src/lib/scan.js";
 import { SynthfinderMcpClient } from "../src/lib/mcp-client.js";
 import { analyzeListings } from "../src/lib/analyzer.js";
 import { createLogger } from "../src/lib/logger.js";
+import { loadKnowledge } from "../src/lib/knowledge.js";
 
 const watchlist: WatchlistItem[] = [{ model: process.env.MODEL ?? "Roland Juno-106" }];
 
@@ -23,7 +25,8 @@ try {
     watchlist,
     searchListings: (query) => mcpClient.searchListings(query),
     getSoldListings: (query, since) => mcpClient.getSoldListings(query, since),
-    analyzeListings: (listings, soldListings) => analyzeListings(listings, soldListings, logger.debug),
+    loadKnowledge: (model) => loadKnowledge(model, join(process.cwd(), "knowledge")),
+    analyzeListings: (listings, soldListings, knowledge) => analyzeListings(listings, soldListings, knowledge, logger.debug),
     log: logger.log,
   });
 

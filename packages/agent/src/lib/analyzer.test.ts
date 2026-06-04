@@ -219,6 +219,76 @@ describe("analyzeListings", () => {
     );
   });
 
+  it("includes knowledge block in prompt when provided", async () => {
+    mockCreate.mockResolvedValue({
+      content: [
+        {
+          type: "tool_use",
+          id: "tool-1",
+          name: "analyze_listings",
+          input: {
+            results: [
+              {
+                index: 0,
+                canonical_model: "Roland Juno-106",
+                condition_tier: "excellent",
+                extras: [],
+                red_flags: [],
+                deal_tier: "fair-deal",
+                reasoning: "ok",
+                comparables: "ok",
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    const { analyzeListings } = await import("./analyzer.js");
+    await analyzeListings([fixtureListing], fixtureSoldListings, "Voice chips fail frequently.");
+
+    const callArgs = mockCreate.mock.calls[0][0];
+    const allText = (callArgs.messages[0].content as Array<{ text: string }>)
+      .map((b) => b.text)
+      .join("\n");
+    expect(allText).toContain("Voice chips fail frequently.");
+  });
+
+  it("omits knowledge block when not provided", async () => {
+    mockCreate.mockResolvedValue({
+      content: [
+        {
+          type: "tool_use",
+          id: "tool-1",
+          name: "analyze_listings",
+          input: {
+            results: [
+              {
+                index: 0,
+                canonical_model: "Roland Juno-106",
+                condition_tier: "excellent",
+                extras: [],
+                red_flags: [],
+                deal_tier: "fair-deal",
+                reasoning: "ok",
+                comparables: "ok",
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    const { analyzeListings } = await import("./analyzer.js");
+    await analyzeListings([fixtureListing], fixtureSoldListings);
+
+    const callArgs = mockCreate.mock.calls[0][0];
+    const allText = (callArgs.messages[0].content as Array<{ text: string }>)
+      .map((b) => b.text)
+      .join("\n");
+    expect(allText).not.toContain("Synth-specific knowledge");
+  });
+
   it("uses stub mode when LLM_MODE=stub", async () => {
     process.env.LLM_MODE = "stub";
 

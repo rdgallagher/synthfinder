@@ -70,11 +70,32 @@ describe("scan", () => {
 
     expect(mockSearchListings).toHaveBeenCalledWith("Roland Juno-106");
     expect(mockGetSoldListings).toHaveBeenCalledWith("Roland Juno-106", expect.any(Date));
-    expect(mockAnalyzeListings).toHaveBeenCalledWith([fixtureListing], [fixtureSoldListing]);
+    expect(mockAnalyzeListings).toHaveBeenCalledWith([fixtureListing], [fixtureSoldListing], undefined);
 
     expect(reports).toHaveLength(1);
     expect(reports[0].watchlistItem.model).toBe("Roland Juno-106");
     expect(reports[0].scoredListings).toEqual([fixtureScored]);
     expect(reports[0].scannedAt).toBeDefined();
+  });
+
+  it("passes knowledge from loadKnowledge to analyzeListings", async () => {
+    const mockAnalyzeListings = vi.fn().mockResolvedValue([fixtureScored]);
+    const mockLoadKnowledge = vi.fn().mockReturnValue("Voice chips fail frequently.");
+    const { scan } = await import("./scan.js");
+
+    await scan({
+      watchlist: [{ model: "Roland Juno-106" }],
+      searchListings: vi.fn().mockResolvedValue([fixtureListing]),
+      getSoldListings: vi.fn().mockResolvedValue([fixtureSoldListing]),
+      analyzeListings: mockAnalyzeListings,
+      loadKnowledge: mockLoadKnowledge,
+    });
+
+    expect(mockLoadKnowledge).toHaveBeenCalledWith("Roland Juno-106");
+    expect(mockAnalyzeListings).toHaveBeenCalledWith(
+      [fixtureListing],
+      [fixtureSoldListing],
+      "Voice chips fail frequently.",
+    );
   });
 });

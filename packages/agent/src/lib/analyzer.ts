@@ -127,6 +127,7 @@ function stubAnalyze(listings: Listing[], soldListings: SoldListing[]): ScoredLi
 export async function analyzeListings(
   listings: Listing[],
   soldListings: SoldListing[],
+  knowledge?: string,
   debug?: (msg: string) => void,
 ): Promise<ScoredListing[]> {
   if (process.env.LLM_MODE === "stub") {
@@ -157,20 +158,20 @@ export async function analyzeListings(
 
   d(`analyzer › input (${listings.length} listings):\n${stableBlock}\n\n${variableBlock}`);
 
+  const contentBlocks: Array<{ type: "text"; text: string }> = [
+    { type: "text", text: stableBlock },
+  ];
+  if (knowledge) {
+    contentBlocks.push({ type: "text", text: `Synth-specific knowledge:\n\n${knowledge}` });
+  }
+  contentBlocks.push({ type: "text", text: variableBlock });
+
   const response = await anthropic.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 16384,
     tools: [ANALYZE_TOOL],
     tool_choice: { type: "tool", name: "analyze_listings" },
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "text", text: stableBlock },
-          { type: "text", text: variableBlock },
-        ],
-      },
-    ],
+    messages: [{ role: "user", content: contentBlocks }],
   });
 
   const toolUse = response.content.find((block) => block.type === "tool_use");
