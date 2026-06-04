@@ -18,7 +18,7 @@
     "eval:normalizer": "tsx evals/normalizer/eval.ts",
     "eval:scorer": "tsx evals/scorer/eval.ts",
     "eval": "npm run eval:normalizer && npm run eval:scorer",
-    "upload-skill": "tsx --env-file-if-exists=.env scripts/upload-skill.ts"
+    "upload-skill": "tsx --env-file-if-exists=.env scripts/upload-skill.mts"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.8",
