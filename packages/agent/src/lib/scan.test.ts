@@ -1,11 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import type {
-  Listing,
-  SoldListing,
-  NormalizedListing,
-  ScoredListing,
-  ScanReport,
-} from "@synthfinder/shared";
+import type { Listing, SoldListing, ScoredListing, ScanReport } from "@synthfinder/shared";
 
 const fixtureListing: Listing = {
   id: "123",
@@ -29,17 +23,15 @@ const fixtureSoldListing: SoldListing = {
   soldPrice: 110000,
 };
 
-const fixtureNormalized: NormalizedListing = {
-  canonicalModel: "Roland Juno-106",
-  conditionTier: "good",
-  price: 120000,
-  extras: ["hard case"],
-  redFlags: [],
-  originalListing: fixtureListing,
-};
-
 const fixtureScored: ScoredListing = {
-  normalizedListing: fixtureNormalized,
+  normalizedListing: {
+    canonicalModel: "Roland Juno-106",
+    conditionTier: "good",
+    price: 120000,
+    extras: ["hard case"],
+    redFlags: [],
+    originalListing: fixtureListing,
+  },
   dealTier: "fair-deal",
   reasoning: "Priced near market average for good condition",
   comparables: "1 sold recently at $1,100",
@@ -54,8 +46,7 @@ describe("scan", () => {
       watchlist: [{ model: "Roland Juno-106" }],
       searchListings: vi.fn().mockResolvedValue([fixtureListing]),
       getSoldListings: vi.fn().mockResolvedValue([fixtureSoldListing]),
-      normalize: vi.fn().mockResolvedValue(fixtureNormalized),
-      score: vi.fn().mockResolvedValue(fixtureScored),
+      analyzeListings: vi.fn().mockResolvedValue([fixtureScored]),
       onListing,
     });
 
@@ -63,11 +54,10 @@ describe("scan", () => {
     expect(onListing).toHaveBeenCalledWith(fixtureScored);
   });
 
-  it("orchestrates the pipeline: fetch → normalize → score → report", async () => {
+  it("orchestrates the pipeline: fetch → analyzeListings → report", async () => {
     const mockSearchListings = vi.fn().mockResolvedValue([fixtureListing]);
     const mockGetSoldListings = vi.fn().mockResolvedValue([fixtureSoldListing]);
-    const mockNormalize = vi.fn().mockResolvedValue(fixtureNormalized);
-    const mockScore = vi.fn().mockResolvedValue(fixtureScored);
+    const mockAnalyzeListings = vi.fn().mockResolvedValue([fixtureScored]);
 
     const { scan } = await import("./scan.js");
 
@@ -75,14 +65,12 @@ describe("scan", () => {
       watchlist: [{ model: "Roland Juno-106" }],
       searchListings: mockSearchListings,
       getSoldListings: mockGetSoldListings,
-      normalize: mockNormalize,
-      score: mockScore,
+      analyzeListings: mockAnalyzeListings,
     });
 
     expect(mockSearchListings).toHaveBeenCalledWith("Roland Juno-106");
     expect(mockGetSoldListings).toHaveBeenCalledWith("Roland Juno-106", expect.any(Date));
-    expect(mockNormalize).toHaveBeenCalledWith(fixtureListing);
-    expect(mockScore).toHaveBeenCalledWith(fixtureNormalized, [fixtureSoldListing]);
+    expect(mockAnalyzeListings).toHaveBeenCalledWith([fixtureListing], [fixtureSoldListing]);
 
     expect(reports).toHaveLength(1);
     expect(reports[0].watchlistItem.model).toBe("Roland Juno-106");

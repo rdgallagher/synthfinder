@@ -1,8 +1,7 @@
 import type { NextRequest } from "next/server";
 import type { ScoredListing } from "@synthfinder/shared";
 import { SynthfinderMcpClient } from "../../../lib/mcp-client";
-import { normalize } from "../../../lib/normalizer";
-import { score } from "../../../lib/scorer";
+import { analyzeListings } from "../../../lib/analyzer";
 import { scan } from "../../../lib/scan";
 
 export const dynamic = "force-dynamic";
@@ -34,8 +33,7 @@ export async function POST(request: NextRequest) {
           watchlist: [{ model }],
           searchListings: (q) => mcpClient.searchListings(q),
           getSoldListings: (q, since) => mcpClient.getSoldListings(q, since),
-          normalize,
-          score,
+          analyzeListings: (listings, soldListings) => analyzeListings(listings, soldListings),
           log: (message) => send("progress", { message }),
           onListing: (listing: ScoredListing) => {
             send("progress", { message: `           ↳ ${listing.reasoning}` });

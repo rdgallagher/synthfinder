@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { SynthfinderMcpClient } from "./mcp-client.js";
-import { normalize } from "./normalizer.js";
-import { score } from "./scorer.js";
+import { analyzeListings } from "./analyzer.js";
 import { scan } from "./scan.js";
 
 const reverbKey = process.env.REVERB_API_KEY;
@@ -28,8 +27,7 @@ describe.skipIf(!reverbKey || !anthropicKey)("scan (E2E integration)", () => {
         // part of the stack: MCP connect, Reverb search, Anthropic normalize+score
         searchListings: async (q) => (await mcpClient.searchListings(q)).slice(0, 2),
         getSoldListings: (q, since) => mcpClient.getSoldListings(q, since),
-        normalize,
-        score,
+        analyzeListings,
       });
 
       expect(reports).toHaveLength(1);
