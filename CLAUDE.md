@@ -55,6 +55,19 @@ Core agent logic lives in `packages/agent/src/lib/` and is framework-agnostic. T
 
 See [ADR-005](./adr/005-tech-stack.md) for rationale.
 
+## Import conventions
+
+TypeScript import extensions vary by package context:
+
+| Location | Local imports | Reason |
+|----------|--------------|--------|
+| `packages/agent/src/` | No extension — `"./scorer"` | `moduleResolution: bundler` (Next.js) |
+| `packages/agent/scripts/` | `.js` extension — `"./scorer.js"` | Node.js ESM requires explicit extensions |
+| `packages/mcp-server/src/` | `.js` extension — `"./reverb-client.js"` | Node.js ESM requires explicit extensions |
+| Test files (`*.test.ts`) — dynamic `import()` | `.js` extension | Vitest runs under Node.js ESM |
+
+Package imports (`@synthfinder/shared`, `@anthropic-ai/sdk`, etc.) never need extensions.
+
 ## ADRs
 
 Architecture Decision Records are in `adr/`. See [README.md](./README.md) for the full index.
