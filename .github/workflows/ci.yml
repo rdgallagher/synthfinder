@@ -26,8 +26,8 @@ jobs:
 
       - run: npm test
         env:
-          LLM_MODE: stub
-          MARKETPLACE: fixture
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          REVERB_API_KEY: ${{ secrets.REVERB_API_KEY }}
 
   deploy:
     name: Deploy to Fly.io
