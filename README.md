@@ -87,6 +87,7 @@ All commands run from the repo root:
 | `npm run eval:normalizer` | Run normalizer evals (requires API key) |
 | `npm run eval:scorer` | Run scorer evals (requires API key) |
 | `npm run eval` | Run all evals |
+| `npm run upload-skill` | Upload `skill/valuing-vintage-synths/` to Anthropic and print the skill ID |
 
 ---
 
@@ -96,8 +97,9 @@ The CLI and tests read from `.env` in the repo root (loaded automatically via `-
 
 | Variable | Values | Default | Effect |
 |----------|--------|---------|--------|
-| `ANTHROPIC_API_KEY` | your key | — | Required for real LLM calls (normalizer, scorer, evals). |
+| `ANTHROPIC_API_KEY` | your key | — | Required for real LLM calls. |
 | `REVERB_API_KEY` | your key | — | Required for `MARKETPLACE=reverb`. Reverb Personal Access Token. |
+| `ANTHROPIC_SKILL_ID` | `skill_01...` | — | Optional. Enables synth-specific knowledge injection via the Anthropic Skills API. Run `npm run upload-skill` once to create the skill and get this ID. |
 | `MARKETPLACE` | `reverb`, `fixture` | `reverb` | `reverb` fetches live Reverb listings; `fixture` uses hardcoded Juno-106 data (offline). |
 | `MODEL` | any model name | `Roland Juno-106` | CLI only — model to scan for. |
 | `LLM_MODE` | `stub` or unset | real LLM | `stub` returns deterministic responses without API calls. Used in tests. |
@@ -111,14 +113,13 @@ The CLI and tests read from `.env` in the repo root (loaded automatically via `-
 
 ```
 Model name (from UI input or MODEL env var)
-  └─ For each item:
-       ├─ MCP tool: search_listings(query)      → Listing[]
+  └─ For each watchlist item:
+       ├─ MCP tool: search_listings(query)      → Listing[] (paginated)
        ├─ MCP tool: get_sold_listings(query)     → SoldListing[]
-       └─ For each listing:
-            ├─ normalize(listing)               → NormalizedListing
-            └─ score(normalized, soldListings)  → ScoredListing
+       └─ analyzeListings(listings, soldListings) → ScoredListing[]
+            (single LLM call — all listings scored at once)
   └─ Web UI: SSE-streamed result cards + progress log
-     CLI:    ScanReport[] → stdout as JSON + timestamped output/ files
+     CLI:    ScanReport[] → timestamped output/ files
 ```
 
 ### Two-Process Architecture
@@ -135,16 +136,15 @@ SynthfinderMcpClient ←──stdio──→ McpServer
 
 ### LLM Pipeline
 
-Two Claude Haiku calls per listing, each using forced `tool_use` for structured output:
+A single Claude Haiku call processes all listings at once via `analyzeListings()`. It combines normalization and scoring into one batched prompt, returning a `ScoredListing[]` for all listings. This reduces API calls from 2× per listing to 1 total.
 
-1. **Normalizer** — `Listing` → `NormalizedListing`
-   - Extracts: canonical model name, condition tier, extras (case, mods, etc.), red flags
-   - Condition tiers: `mint` | `excellent` | `good` | `fair` | `poor` | `for-parts`
+**Output per listing:**
+- Canonical model name, condition tier (`mint` → `for-parts`), extras, red flags
+- Deal tier (`strong-bargain` | `fair-deal` | `overpriced`), reasoning, comparables summary
 
-2. **Scorer** — `NormalizedListing` + `SoldListing[]` → `ScoredListing`
-   - Pre-computes IQR-filtered price statistics (median, p25, p75) from recent sold comps and includes them in the prompt as a numeric anchor
-   - Deal tiers: `strong-bargain` | `fair-deal` | `overpriced`
-   - Outputs tier, reasoning, and comparables summary
+**Market anchor:** IQR-filtered price statistics (median, p25, p75) from recent sold comps are pre-computed and included in the prompt so the model reasons from concrete numbers.
+
+**Synth-specific knowledge (optional):** When `ANTHROPIC_SKILL_ID` is set, `analyzeListings` uses the Anthropic Skills API to inject model-specific context (known failure modes, desirable mods, variant details). The skill package lives in `skill/valuing-vintage-synths/`. See [ADR-010](./adr/010-anthropic-skills-knowledge-injection.md).
 
 ---
 
@@ -240,6 +240,7 @@ Significant decisions are recorded in `adr/`:
 - [ADR-007](./adr/007-deployment-cicd.md) — Deployment and CI/CD
 - [ADR-008](./adr/008-mcp-server.md) — MCP server for marketplace data access
 - [ADR-009](./adr/009-monorepo-workspaces.md) — Monorepo with npm workspaces
+- [ADR-010](./adr/010-anthropic-skills-knowledge-injection.md) — Anthropic Skills for synth-specific knowledge injection
 
 ---
 
