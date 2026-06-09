@@ -1,0 +1,13 @@
+.git
+node_modules
+**/node_modules
+**/.next
+coverage
+output
+.env
+.env.*
+*.env.local
+.claude
+docs
+evals
+adr
