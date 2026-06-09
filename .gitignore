@@ -30,6 +30,7 @@ build/
 *.egg-info/
 .pytest_cache/
 .coverage
+coverage/
 *.tsbuildinfo
 
 # Claude Code
