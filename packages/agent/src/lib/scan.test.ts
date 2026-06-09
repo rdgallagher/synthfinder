@@ -77,4 +77,19 @@ describe("scan", () => {
     expect(reports[0].scoredListings).toEqual([fixtureScored]);
     expect(reports[0].scannedAt).toBeDefined();
   });
+
+  it("skips analysis and returns empty scoredListings when no listings are found", async () => {
+    const mockAnalyzeListings = vi.fn();
+    const { scan } = await import("./scan.js");
+
+    const reports = await scan({
+      watchlist: [{ model: "Thingstone Track8" }],
+      searchListings: vi.fn().mockResolvedValue([]),
+      getSoldListings: vi.fn().mockResolvedValue([]),
+      analyzeListings: mockAnalyzeListings,
+    });
+
+    expect(mockAnalyzeListings).not.toHaveBeenCalled();
+    expect(reports[0].scoredListings).toEqual([]);
+  });
 });

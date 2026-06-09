@@ -301,6 +301,7 @@ describe("analyzeListings", () => {
     expect(mockCreate).toHaveBeenCalledTimes(2);
     const phase2Call = mockCreate.mock.calls[1][0];
     expect(phase2Call.tool_choice).toEqual({ type: "tool", name: "analyze_listings" });
+    expect(phase2Call.tools.some((t: { type: string }) => t.type === "code_execution_20250825")).toBe(true);
     expect(results[0].dealTier).toBe("strong-bargain");
   });
 

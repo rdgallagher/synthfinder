@@ -31,6 +31,12 @@ export async function scan(deps: ScanDependencies): Promise<ScanReport[]> {
     const soldListings = await deps.getSoldListings(query, since);
     log(`Found ${listings.length} listings, ${soldListings.length} sold comps (last 90 days)`);
 
+    if (listings.length === 0) {
+      log(`  No listings found — skipping analysis`);
+      reports.push({ watchlistItem: item, scoredListings: [], scannedAt: new Date().toISOString() });
+      continue;
+    }
+
     log(`  Analysing ${listings.length} listings...`);
     const scoredListings = await deps.analyzeListings(listings, soldListings);
     for (const scored of scoredListings) {

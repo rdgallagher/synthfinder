@@ -250,7 +250,7 @@ export async function analyzeListings(
       max_tokens: 16384,
       betas: [...BETAS],
       container: { id: containerId, ...container },
-      tools: [ANALYZE_TOOL],
+      tools: [CODE_EXECUTION_TOOL, ANALYZE_TOOL],
       tool_choice: { type: "tool", name: "analyze_listings" },
       messages,
     });
