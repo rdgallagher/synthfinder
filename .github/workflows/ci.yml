@@ -34,11 +34,16 @@ jobs:
     needs: ci
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - run: flyctl deploy --remote-only
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - run: |
+          if [ -n "$FLY_API_TOKEN" ]; then
+            flyctl deploy --remote-only
+          else
+            echo "FLY_API_TOKEN not set — skipping deploy (add secret to enable)"
+          fi
