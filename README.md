@@ -2,7 +2,7 @@
 
 An AI-powered deal scanner for vintage analog synthesizers. Given a synth model, it fetches live Reverb listings, normalizes and scores each one using Claude Haiku, and presents the results as a real-time streaming web UI or a structured JSON report via CLI.
 
-**Current state:** Web UI and CLI both operational — live Reverb listings, LLM normalisation and scoring, SSE-streamed results, file-based logging with optional LLM debug output.
+**Production:** https://synthfinder.fly.dev/
 
 ---
 
@@ -100,6 +100,7 @@ The CLI and tests read from `.env` in the repo root (loaded automatically via `-
 | `ANTHROPIC_API_KEY` | your key | — | Required for real LLM calls. |
 | `REVERB_API_KEY` | your key | — | Required for `MARKETPLACE=reverb`. Reverb Personal Access Token. |
 | `ANTHROPIC_SKILL_ID` | `skill_01...` | — | Optional. Enables synth-specific knowledge injection via the Anthropic Skills API. Run `npm run upload-skill` once to create the skill and get this ID. |
+| `SITE_PASSWORD` | any string | — | Optional. Enables HTTP Basic Auth on the web UI and API. Set this in production to prevent unauthorised access. |
 | `MARKETPLACE` | `reverb`, `fixture` | `reverb` | `reverb` fetches live Reverb listings; `fixture` uses hardcoded Juno-106 data (offline). |
 | `MODEL` | any model name | `Roland Juno-106` | CLI only — model to scan for. |
 | `LLM_MODE` | `stub` or unset | real LLM | `stub` returns deterministic responses without API calls. Used in tests. |
@@ -224,6 +225,38 @@ Unit and e2e tests use `LLM_MODE=stub` and `MARKETPLACE=fixture` so they run off
 
 - `reverb-client.integration.test.ts` — requires `REVERB_API_KEY`
 - `scan.integration.test.ts` — requires both `REVERB_API_KEY` and `ANTHROPIC_API_KEY`; runs the full pipeline (MCP connect → Reverb search → Anthropic normalize + score) against 2 real listings
+
+---
+
+## Deployment
+
+The app runs on [Fly.io](https://fly.io) at **https://synthfinder.fly.dev/**. CI/CD is via GitHub Actions.
+
+### How it works
+- Every push and PR runs the CI job: `npm run lint`, `npm run type-check`, `npm test`
+- Every push to `main` that passes CI triggers an automatic deploy to Fly.io (`flyctl deploy --remote-only`)
+- The deploy job builds the Docker image on Fly's infrastructure and rolls it out
+
+### First-time setup
+```bash
+brew install flyctl
+fly auth login
+fly launch --no-deploy          # provisions the app, updates fly.toml
+fly secrets set \
+  ANTHROPIC_API_KEY=... \
+  REVERB_API_KEY=... \
+  ANTHROPIC_SKILL_ID=... \
+  SITE_PASSWORD=...
+fly deploy                       # first manual deploy to verify
+```
+
+Then add `FLY_API_TOKEN` to GitHub repo secrets (Settings → Secrets → Actions) to enable automatic deploys:
+```bash
+fly tokens create deploy         # copy output → GitHub secret FLY_API_TOKEN
+```
+
+### Password protection
+Set `SITE_PASSWORD` as a Fly secret to enable HTTP Basic Auth on the web UI and `/api/scan` endpoint. Without it the app is open (fine for local dev, not for production).
 
 ---
 
