@@ -37,7 +37,7 @@ export class SynthfinderMcpClient {
       arguments: { query },
     });
 
-    const textBlock = result.content.find(
+    const textBlock = (result.content as Array<{ type: string; text?: string }>).find(
       (c): c is { type: "text"; text: string } => c.type === "text",
     );
     if (!textBlock) throw new Error("No text content in search_listings response");
@@ -51,7 +51,7 @@ export class SynthfinderMcpClient {
       arguments: { query, since: since.toISOString() },
     });
 
-    const textBlock = result.content.find(
+    const textBlock = (result.content as Array<{ type: string; text?: string }>).find(
       (c): c is { type: "text"; text: string } => c.type === "text",
     );
     if (!textBlock) throw new Error("No text content in get_sold_listings response");
