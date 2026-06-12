@@ -71,3 +71,19 @@ Package imports (`@synthfinder/shared`, `@anthropic-ai/sdk`, etc.) never need ex
 ## ADRs
 
 Architecture Decision Records are in `adr/`. See [README.md](./README.md) for the full index.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in **Linear** (SynthFinder project, team Rdgallagher) via the
+`linear-server` MCP server. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage roles map to Linear labels of the same name. See
+`docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` and `adr/` at the repo root. See `docs/agents/domain.md`.
