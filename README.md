@@ -2,7 +2,7 @@
 
 An AI-powered deal scanner for vintage analog synthesizers. Given a synth model, it fetches live Reverb listings, normalizes and scores each one using Claude Haiku, and presents the results as a real-time streaming web UI or a structured JSON report via CLI.
 
-**Production:** https://synthfinder.fly.dev/
+**Live demo:** available on request.
 
 ---
 
@@ -230,7 +230,7 @@ Unit and e2e tests use `LLM_MODE=stub` and `MARKETPLACE=fixture` so they run off
 
 ## Deployment
 
-The app runs on [Fly.io](https://fly.io) at **https://synthfinder.fly.dev/**. CI/CD is via GitHub Actions.
+The app is deployed on [Fly.io](https://fly.io); a live demo is available on request. CI/CD is via GitHub Actions.
 
 ### How it works
 - Every push and PR runs the CI job: `npm run lint`, `npm run type-check`, `npm test`
@@ -261,6 +261,9 @@ Set `SITE_PASSWORD` as a Fly secret to enable HTTP Basic Auth on the web UI and 
 ---
 
 ## Architecture Decisions
+
+For how this project is built — the AI-assisted workflow and the supporting
+tooling in this repo — see [DEVELOPMENT.md](./DEVELOPMENT.md).
 
 Significant decisions are recorded in `adr/`:
 
