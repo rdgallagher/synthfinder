@@ -1,6 +1,6 @@
 # SynthFinder Agent
 
-An AI-powered deal scanner for vintage analog synthesizers. Given a synth model, it fetches live Reverb listings, normalizes and scores each one using Claude Haiku, and presents the results as a real-time streaming web UI or a structured JSON report via CLI.
+An AI-powered deal scanner for vintage analog synthesizers. Given a synth model, it fetches live Reverb listings, normalizes and scores each one using an LLM, and presents the results as a real-time streaming web UI or a structured JSON report via CLI.
 
 **Live demo:** available on request.
 
@@ -137,7 +137,7 @@ SynthfinderMcpClient ←──stdio──→ McpServer
 
 ### LLM Pipeline
 
-A single Claude Haiku call processes all listings at once via `analyzeListings()`. It combines normalization and scoring into one batched prompt, returning a `ScoredListing[]` for all listings. This reduces API calls from 2× per listing to 1 total.
+A single LLM call processes all listings at once via `analyzeListings()`. It combines normalization and scoring into one batched prompt, returning a `ScoredListing[]` for all listings. This reduces API calls from 2× per listing to 1 total.
 
 **Output per listing:**
 - Canonical model name, condition tier (`mint` → `for-parts`), extras, red flags
@@ -202,7 +202,7 @@ Offline alternative to the Reverb client. Returns hardcoded Juno-106 data — 4 
 
 ### `packages/agent/src/lib/normalizer.ts` and `scorer.ts`
 
-Each exports a single async function (`normalize`, `score`) that calls Claude Haiku with forced `tool_use`. Both accept an optional `debug?` callback — when provided, the LLM prompt is logged before the call and the raw `tool_use` response after. When `LLM_MODE=stub`, returns a deterministic response without making an API call.
+Each exports a single async function (`normalize`, `score`) that calls the LLM with forced `tool_use`. Both accept an optional `debug?` callback — when provided, the LLM prompt is logged before the call and the raw `tool_use` response after. When `LLM_MODE=stub`, returns a deterministic response without making an API call.
 
 ### `packages/agent/scripts/scan.ts`
 
