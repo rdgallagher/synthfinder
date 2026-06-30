@@ -15,9 +15,8 @@
     "format:check": "prettier --check 'packages/*/src/**/*.{ts,tsx}'",
     "type-check": "tsc --build",
     "scan": "tsx --env-file-if-exists=.env packages/agent/scripts/scan.ts",
-    "eval:normalizer": "tsx evals/normalizer/eval.ts",
-    "eval:scorer": "tsx evals/scorer/eval.ts",
-    "eval": "npm run eval:normalizer && npm run eval:scorer",
+    "eval:analyzer": "tsx --env-file-if-exists=.env evals/analyzer/eval.ts",
+    "eval": "npm run eval:analyzer",
     "upload-skill": "tsx --env-file-if-exists=.env scripts/upload-skill.mts"
   },
   "devDependencies": {

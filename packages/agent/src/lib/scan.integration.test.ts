@@ -24,7 +24,7 @@ describe.skipIf(!reverbKey || !anthropicKey)("scan (E2E integration)", () => {
       const reports = await scan({
         watchlist: [{ model: "Roland Juno-106" }],
         // Limit to 2 listings so the test stays fast without skipping any
-        // part of the stack: MCP connect, Reverb search, Anthropic normalize+score
+        // part of the stack: MCP connect, Reverb search, Anthropic analyze
         searchListings: async (q) => (await mcpClient.searchListings(q)).slice(0, 2),
         getSoldListings: (q, since) => mcpClient.getSoldListings(q, since),
         analyzeListings,

@@ -269,7 +269,7 @@ Significant decisions are recorded in `adr/`:
 
 - [ADR-001](./adr/001-mvp-scope.md) — MVP scope: CLI-based deal scanner
 - [ADR-002](./adr/002-marketplace-abstraction.md) — Marketplace abstraction
-- [ADR-003](./adr/003-llm-pipeline.md) — Two-stage LLM pipeline (normalizer + scorer)
+- [ADR-003](./adr/003-llm-pipeline.md) — Two-stage LLM pipeline (normalizer + scorer) _(superseded by ADR-011)_
 - [ADR-004](./adr/004-evals-strategy.md) — Evals as first-class citizens
 - [ADR-005](./adr/005-tech-stack.md) — Tech stack choices
 - [ADR-006](./adr/006-no-database-mvp.md) — No database in MVP
@@ -277,6 +277,7 @@ Significant decisions are recorded in `adr/`:
 - [ADR-008](./adr/008-mcp-server.md) — MCP server for marketplace data access
 - [ADR-009](./adr/009-monorepo-workspaces.md) — Monorepo with npm workspaces
 - [ADR-010](./adr/010-anthropic-skills-knowledge-injection.md) — Anthropic Skills for synth-specific knowledge injection
+- [ADR-011](./adr/011-collapse-two-stage-pipeline.md) — Collapse the two-stage pipeline into a single analyzer
 
 ---
 

@@ -1,7 +1,7 @@
 # ADR-003: Two-Stage LLM Pipeline (Normalizer + Scorer)
 
 ## Status
-Accepted
+Superseded by [ADR-011](./011-collapse-two-stage-pipeline.md)
 
 ## Context
 Raw marketplace listings are messy and inconsistent. "Roland JUNO 106 great cond w/ case" needs to become structured data before we can reason about it. We also need an LLM to make the subjective judgment of whether a listing is a good deal given price context. These are two distinct tasks with different evaluation criteria.

@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { BetaContentBlockParam, BetaMessageParam } from "@anthropic-ai/sdk/resources/beta/messages/messages";
 import type { Listing, SoldListing, ScoredListing, NormalizedListing, DealTier, ConditionTier } from "@synthfinder/shared";
-import { computePriceStats } from "./scorer";
+import { computePriceStats } from "./price-stats";
 
 const anthropic = new Anthropic();
 
