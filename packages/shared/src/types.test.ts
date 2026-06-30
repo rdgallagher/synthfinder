@@ -9,6 +9,8 @@ import type {
   DealTier,
   ConditionTier,
   MarketplaceClient,
+  AnalyzePrompt,
+  LLMProvider,
 } from "./types.js";
 
 describe("domain types", () => {
@@ -105,5 +107,24 @@ describe("domain types", () => {
       getSoldListings: async () => [],
     };
     expect(mockClient.name).toBe("fixture");
+  });
+
+  it("can construct an AnalyzePrompt with optional knowledge", () => {
+    const prompt: AnalyzePrompt = {
+      listings: [],
+      soldListings: [],
+      knowledge: { skillId: "skill_01test" },
+    };
+    expect(prompt.knowledge?.skillId).toBe("skill_01test");
+
+    const withoutKnowledge: AnalyzePrompt = { listings: [], soldListings: [] };
+    expect(withoutKnowledge.knowledge).toBeUndefined();
+  });
+
+  it("LLMProvider interface has correct shape", () => {
+    const provider: LLMProvider = {
+      analyzeListings: async () => [],
+    };
+    expect(typeof provider.analyzeListings).toBe("function");
   });
 });
