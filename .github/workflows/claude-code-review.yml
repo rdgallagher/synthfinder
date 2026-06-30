@@ -31,4 +31,4 @@ jobs:
             criterion is actually met. Leave specific, actionable inline comments.
             If the PR looks good, say so concisely.
           claude_args: |
-            --max-turns 20
+            --max-turns 50

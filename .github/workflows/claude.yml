@@ -32,11 +32,14 @@ jobs:
             write a failing test first, make it pass, then refactor.
 
             Satisfy every item in the issue's "Acceptance Criteria" checklist. Treat
-            the issue as done only when all acceptance criteria are met and the full
-            test suite, lint, and type-check pass locally.
+            the issue as done only when all acceptance criteria are met.
 
-            When finished, open a pull request that closes issue
-            #${{ github.event.issue.number }} and explains how each acceptance
-            criterion was satisfied. Do not merge it.
+            Before opening the PR, run `npm ci` once, then verify your work with
+            `npm run lint`, `npm run type-check`, and `npm test`. They must all pass.
+
+            When finished, open a pull request with `gh pr create` whose body
+            includes "Closes #${{ github.event.issue.number }}" and explains how
+            each acceptance criterion was satisfied. Do not merge it.
           claude_args: |
-            --max-turns 40
+            --max-turns 60
+            --allowedTools "Bash(npm ci),Bash(npm run lint),Bash(npm run type-check),Bash(npm test),Bash(gh pr create:*)"
