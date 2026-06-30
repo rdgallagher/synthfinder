@@ -1,0 +1,115 @@
+name: Agent PR Loop
+
+# Autonomous reviewer <-> implementer loop on a PR.
+#
+# On every push to a PR an adversarial REVIEWER critiques it and emits a verdict.
+# If it requests changes (and we are under the revision cap), an IMPLEMENTER
+# addresses the feedback and pushes a fix. That push (made by the Claude app
+# token, which — unlike the default GITHUB_TOKEN — re-triggers workflows) fires
+# `synchronize`, looping until the reviewer APPROVES or the cap is hit. Merge
+# stays manual.
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+  id-token: write
+  actions: read
+
+env:
+  MAX_CYCLES: "3"
+
+jobs:
+  loop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Count completed review cycles (one marker comment per cycle). Stop and
+      # hand off to a human once we have revised MAX_CYCLES times without
+      # converging, so the loop can never run away.
+      - name: Check revision cap
+        id: cap
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          count=$(gh pr view "$PR" --json comments \
+            --jq '[.comments[] | select(.body | contains("<!-- AGENT-REVIEW -->"))] | length')
+          echo "Review cycles so far: $count (cap: $MAX_CYCLES)"
+          if [ "$count" -ge "$MAX_CYCLES" ]; then
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            gh pr comment "$PR" --body "🛑 Agent loop hit the ${MAX_CYCLES}-revision cap without the reviewer approving. Handing off for human review."
+          else
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Adversarial review
+        if: steps.cap.outputs.proceed == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            You are the REVIEWER. Adversarially review pull request
+            #${{ github.event.pull_request.number }} against CLAUDE.md and the
+            acceptance criteria of the issue it closes (find it via the "Closes #N"
+            in the PR body, then `gh issue view N`). Focus on correctness, missing
+            or weak test coverage, adherence to the project's TDD and simplicity
+            practices, and whether every acceptance criterion is actually met.
+
+            Do NOT modify any files. Post exactly ONE PR comment with:
+              gh pr comment ${{ github.event.pull_request.number }} --body "<body>"
+
+            The comment body MUST begin with this exact line:
+              <!-- AGENT-REVIEW -->
+            and MUST end with exactly one of these two lines:
+              AGENT_REVIEW_VERDICT: APPROVED
+              AGENT_REVIEW_VERDICT: CHANGES_REQUESTED
+
+            Use APPROVED only when every acceptance criterion is met and you have
+            no actionable findings. Otherwise list specific, actionable findings
+            and use CHANGES_REQUESTED.
+          claude_args: |
+            --max-turns 30
+            --disallowedTools "Edit,Write,MultiEdit,NotebookEdit"
+            --allowedTools "Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh issue view:*),Bash(gh api:*)"
+
+      - name: Read verdict
+        id: verdict
+        if: steps.cap.outputs.proceed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          body=$(gh pr view "$PR" --json comments \
+            --jq '[.comments[] | select(.body | contains("<!-- AGENT-REVIEW -->"))] | last | .body')
+          if echo "$body" | grep -q "AGENT_REVIEW_VERDICT: CHANGES_REQUESTED"; then
+            echo "verdict=CHANGES_REQUESTED" >> "$GITHUB_OUTPUT"
+          else
+            # Fail safe: anything other than an explicit CHANGES request ends the loop.
+            echo "verdict=APPROVED" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Address review feedback
+        if: steps.cap.outputs.proceed == 'true' && steps.verdict.outputs.verdict == 'CHANGES_REQUESTED'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            You are the IMPLEMENTER. Read the most recent reviewer comment on PR
+            #${{ github.event.pull_request.number }} (the one containing
+            "<!-- AGENT-REVIEW -->") via
+            `gh pr view ${{ github.event.pull_request.number }} --comments`.
+
+            Address every actionable finding, following CLAUDE.md and TDD. Then run
+            `npm ci` once and verify with `npm run lint`, `npm run type-check`, and
+            `npm test` — they must all pass. Commit the changes to this PR branch
+            with a clear message. Do not merge.
+          claude_args: |
+            --max-turns 60
+            --allowedTools "Bash(npm ci),Bash(npm run lint),Bash(npm run type-check),Bash(npm test),Bash(gh pr view:*)"
