@@ -112,4 +112,4 @@ jobs:
             with a clear message. Do not merge.
           claude_args: |
             --max-turns 60
-            --allowedTools "Bash(npm ci),Bash(npm run lint),Bash(npm run type-check),Bash(npm test),Bash(gh pr view:*)"
+            --allowedTools "Edit,Write,MultiEdit,Read,Bash(npm:*),Bash(git:*),Bash(gh pr view:*)"
