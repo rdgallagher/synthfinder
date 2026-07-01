@@ -11,12 +11,3 @@ export function formatPriceFromCents(cents: number): string {
     cents / 100,
   );
 }
-
-/**
- * Parse a user-entered dollar string like "$1,234.50" back into whole cents.
- * e.g. "$12.34" -> 1234
- */
-export function parseDollarsToCents(input: string): number {
-  const n = parseFloat(input.replace("$", ""));
-  return n * 100;
-}
