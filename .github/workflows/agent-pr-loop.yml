@@ -54,6 +54,9 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Allow our own bot's pushes to drive the loop; runaway is bounded by
+          # the MAX_CYCLES cap above.
+          allowed_bots: "claude"
           prompt: |
             You are the REVIEWER. Adversarially review pull request
             #${{ github.event.pull_request.number }} against CLAUDE.md and the
@@ -100,6 +103,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          allowed_bots: "claude"
           prompt: |
             You are the IMPLEMENTER. Read the most recent reviewer comment on PR
             #${{ github.event.pull_request.number }} (the one containing
