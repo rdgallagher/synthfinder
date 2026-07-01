@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { BetaContentBlockParam, BetaMessageParam } from "@anthropic-ai/sdk/resources/beta/messages/messages";
 import type { Listing, SoldListing, ScoredListing, NormalizedListing, DealTier, ConditionTier } from "@synthfinder/shared";
 import { computePriceStats } from "./price-stats";
+import { formatPriceFromCents } from "./format-price";
 
 const anthropic = new Anthropic();
 
@@ -94,10 +95,6 @@ interface AnalyzeToolInput {
   results: AnalyzeResult[];
 }
 
-function formatUSD(cents: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
-}
-
 function stubAnalyze(listings: Listing[], soldListings: SoldListing[]): ScoredListing[] {
   const avgSoldPrice =
     soldListings.length > 0
@@ -126,7 +123,7 @@ function stubAnalyze(listings: Listing[], soldListings: SoldListing[]): ScoredLi
     return {
       normalizedListing: normalized,
       dealTier,
-      reasoning: `Listed at ${formatUSD(listing.price)}. Average sold price: ${formatUSD(avgSoldPrice)}.`,
+      reasoning: `Listed at ${formatPriceFromCents(listing.price)}. Average sold price: ${formatPriceFromCents(avgSoldPrice)}.`,
       comparables: `${soldListings.length} sold listings used for comparison.`,
     };
   });
@@ -168,17 +165,17 @@ export async function analyzeListings(
   const stats = computePriceStats(soldListings);
 
   const soldSummary = soldListings
-    .map((s) => `- ${s.title}: sold for ${formatUSD(s.soldPrice)} on ${s.soldDate} (${s.condition})`)
+    .map((s) => `- ${s.title}: sold for ${formatPriceFromCents(s.soldPrice)} on ${s.soldDate} (${s.condition})`)
     .join("\n");
 
   const statsSummary = stats
-    ? `Market price summary (${stats.filteredCount} of ${stats.totalCount} recent sales, ${stats.totalCount - stats.filteredCount} outliers excluded):\n- Filtered median: ${formatUSD(stats.filteredMedian)}\n- Typical range (p25–p75): ${formatUSD(stats.p25)} – ${formatUSD(stats.p75)}`
+    ? `Market price summary (${stats.filteredCount} of ${stats.totalCount} recent sales, ${stats.totalCount - stats.filteredCount} outliers excluded):\n- Filtered median: ${formatPriceFromCents(stats.filteredMedian)}\n- Typical range (p25–p75): ${formatPriceFromCents(stats.p25)} – ${formatPriceFromCents(stats.p75)}`
     : "No sold data available.";
 
   const listingsSummary = listings
     .map(
       (listing, i) =>
-        `[${i}] Title: ${listing.title}\n    Description: ${listing.description}\n    Price: ${formatUSD(listing.price)}\n    Condition: ${listing.condition}`,
+        `[${i}] Title: ${listing.title}\n    Description: ${listing.description}\n    Price: ${formatPriceFromCents(listing.price)}\n    Condition: ${listing.condition}`,
     )
     .join("\n\n");
 

@@ -1,4 +1,5 @@
 import type { Listing, SoldListing, ScoredListing, ScanReport, WatchlistItem } from "@synthfinder/shared";
+import { formatPriceFromCents } from "./format-price";
 
 export interface ScanDependencies {
   watchlist: WatchlistItem[];
@@ -7,12 +8,6 @@ export interface ScanDependencies {
   analyzeListings: (listings: Listing[], soldListings: SoldListing[]) => Promise<ScoredListing[]>;
   log?: (message: string) => void;
   onListing?: (scored: ScoredListing) => void;
-}
-
-function formatPrice(cents: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-    cents / 100,
-  );
 }
 
 export async function scan(deps: ScanDependencies): Promise<ScanReport[]> {
@@ -40,7 +35,7 @@ export async function scan(deps: ScanDependencies): Promise<ScanReport[]> {
     log(`  Analysing ${listings.length} listings...`);
     const scoredListings = await deps.analyzeListings(listings, soldListings);
     for (const scored of scoredListings) {
-      log(`  "${scored.normalizedListing.originalListing.title}" (${formatPrice(scored.normalizedListing.price)}) → ${scored.dealTier}`);
+      log(`  "${scored.normalizedListing.originalListing.title}" (${formatPriceFromCents(scored.normalizedListing.price)}) → ${scored.dealTier}`);
       deps.onListing?.(scored);
     }
 
