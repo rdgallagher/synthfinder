@@ -278,6 +278,7 @@ Significant decisions are recorded in `adr/`:
 - [ADR-009](./adr/009-monorepo-workspaces.md) — Monorepo with npm workspaces
 - [ADR-010](./adr/010-anthropic-skills-knowledge-injection.md) — Anthropic Skills for synth-specific knowledge injection
 - [ADR-011](./adr/011-collapse-two-stage-pipeline.md) — Collapse the two-stage pipeline into a single analyzer
+- [ADR-012](./adr/012-remote-mcp-server.md) — Deploy the MCP server as a standalone remote service
 
 ---
 
