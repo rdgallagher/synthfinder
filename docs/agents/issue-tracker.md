@@ -1,29 +1,33 @@
-# Issue tracker: Linear
+# Issue tracker: GitHub Issues
 
-Issues and PRDs for this repo live in **Linear**, in the **SynthFinder** project
-(team **Rdgallagher**, issue prefix `RDG-`). Use the `linear-server` MCP tools for
-all operations — not the `gh` CLI.
+Issues and PRDs for this repo live in **GitHub Issues** on
+`rdgallagher/synthfinder`. Use the `gh` CLI for all operations.
 
 ## Conventions
 
-- **Create an issue**: `mcp__linear-server__save_issue` with `team: "Rdgallagher"`,
-  `project: "SynthFinder"`, a `title`, a markdown `description`, and a `state`
-  (Backlog / Todo / In Progress / In Review / Done / Canceled).
-- **Update an issue**: `mcp__linear-server__save_issue` with the issue `id`
-  (e.g. `RDG-12`) and the fields to change (e.g. `state: "Done"`).
-- **Read an issue**: `mcp__linear-server__get_issue` for the full description;
-  `mcp__linear-server__list_comments` for discussion.
-- **List issues**: `mcp__linear-server__list_issues` with `project: "SynthFinder"`
-  and optional `state` / `label` filters.
-- **Comment**: `mcp__linear-server__save_comment` with `issueId` and a markdown `body`.
-- **Apply labels**: pass `labels: [...]` to `save_issue` (see `triage-labels.md`).
+- **Create an issue**: `gh issue create --title "..." --body-file <file>` (or
+  `--body "..."`). Use the **Agent task** template
+  (`.github/ISSUE_TEMPLATE/agent-task.md`): Context / Acceptance Criteria (a
+  machine-checkable checklist) / Out of scope / Verification.
+- **Read an issue**: `gh issue view <N>` (add `--comments` for discussion).
+- **List issues**: `gh issue list` with optional `--label` / `--state` filters.
+- **Update / close**: `gh issue edit <N> ...` / `gh issue close <N>`.
+- **Comment**: `gh issue comment <N> --body "..."`.
+- **Apply labels**: `gh issue edit <N> --add-label <label>` (see `triage-labels.md`).
 
 Pass markdown content directly with literal newlines — do not escape as `\n`.
 
+## Running work with agents
+
+Labelling an issue **`agent-ready`** dispatches the Claude agent to implement it
+(`.github/workflows/claude.yml`), which opens a PR. The PR then runs through the
+autonomous reviewer↔implementer loop (`.github/workflows/agent-pr-loop.yml`)
+until the reviewer approves or the revision cap is hit. **Merges stay manual.**
+
 ## When a skill says "publish to the issue tracker"
 
-Create a Linear issue in the SynthFinder project.
+Create a GitHub issue in this repo with `gh issue create`.
 
 ## When a skill says "fetch the relevant ticket"
 
-Call `get_issue` with the `RDG-` identifier (and `list_comments` if discussion matters).
+Call `gh issue view <N>` (add `--comments` if discussion matters).

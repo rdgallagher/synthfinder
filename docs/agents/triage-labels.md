@@ -1,17 +1,19 @@
 # Triage Labels
 
 The skills speak in terms of five canonical triage roles. This file maps those roles
-to the actual Linear labels used in this repo. These are applied via the `labels`
-field on `mcp__linear-server__save_issue`, on top of Linear's native workflow states.
+to the actual GitHub labels used in this repo. Apply them with
+`gh issue edit <N> --add-label <label>`.
 
-| Role in mattpocock/skills | Linear label      | Meaning                                  |
+| Role in mattpocock/skills | GitHub label      | Meaning                                  |
 | ------------------------- | ----------------- | ---------------------------------------- |
 | `needs-triage`            | `needs-triage`    | Maintainer needs to evaluate this issue  |
 | `needs-info`              | `needs-info`      | Waiting on reporter for more information |
-| `ready-for-agent`         | `ready-for-agent` | Fully specified, ready for an AFK agent  |
+| `ready-for-agent`         | `agent-ready`     | Fully specified — dispatches the agent   |
 | `ready-for-human`         | `ready-for-human` | Requires human implementation            |
 | `wontfix`                 | `wontfix`         | Will not be actioned                     |
 
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the
-corresponding Linear label from this table. Linear creates a label on first use, so
-no pre-setup is required. Edit the right-hand column if your vocabulary changes.
+corresponding GitHub label from this table. Note that `agent-ready` is also the
+**dispatch trigger**: applying it launches the Claude agent on the issue (see
+`issue-tracker.md`). Unlike Linear, GitHub does **not** auto-create labels — a
+label must exist in the repo before it can be applied.

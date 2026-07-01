@@ -76,13 +76,15 @@ Architecture Decision Records are in `adr/`. See [README.md](./README.md) for th
 
 ### Issue tracker
 
-Issues are tracked in **Linear** (SynthFinder project, team Rdgallagher) via the
-`linear-server` MCP server. See `docs/agents/issue-tracker.md`.
+Issues are tracked in **GitHub Issues** on `rdgallagher/synthfinder` via the `gh`
+CLI. Labelling an issue `agent-ready` dispatches the Claude agent to implement it
+and open a PR, which then runs through the autonomous reviewer↔implementer loop
+(merges stay manual). See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-The five canonical triage roles map to Linear labels of the same name. See
-`docs/agents/triage-labels.md`.
+The five canonical triage roles map to GitHub labels (`ready-for-agent` →
+`agent-ready`, the dispatch trigger). See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
