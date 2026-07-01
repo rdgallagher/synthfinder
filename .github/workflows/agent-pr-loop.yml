@@ -24,6 +24,9 @@ env:
 
 jobs:
   loop:
+    # Only run on agent-authored PRs (branches from claude.yml's `claude/` prefix).
+    # Human and docs PRs are left for human review, not adversarially rewritten.
+    if: startsWith(github.head_ref, 'claude/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
